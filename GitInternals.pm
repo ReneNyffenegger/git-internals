@@ -107,6 +107,8 @@ sub print_command {
 
   my $command_html = escape_html($command);
 
+  $command_html =~ s!^git +(\w+)!<a href='http://renenyffenegger.ch/notes/development/version-control-systems/git/commands/$1'>git $1</a>!;
+
   my $cur_dir = $self->{cur_dirs}->[$repo_no];
 
   print {$self->{html_out}} "<span class='cur-dir'>$cur_dir</span>&gt; <b>$command_html</b>\n";
