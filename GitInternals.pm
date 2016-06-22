@@ -10,6 +10,9 @@ use File::DirCompare;
 use File::Find;
 use HTML::Escape;
 use Cwd;
+use utf8;
+
+use open ':utf8';
 
 sub new {
 
@@ -66,6 +69,11 @@ sub exec {
   my %options   = @_;
 
   $self->html("<div class='out$repo_no'>");
+
+  if ($options{text_pre}) {
+    $self->html("<p class='txt'>" . text2html($options{text_pre}) . "</p>\n");
+  }
+
   $self->html("<code class='shell'><pre>");
 
   $self -> print_command($repo_no, $command);
@@ -83,6 +91,9 @@ sub exec {
     $self -> compare_snapshots($repo_no);
   }
 
+  if ($options{text_post}) {
+    $self->html("<p class='txt'>" . text2html($options{text_post}) . "</p>\n");
+  }
 
   $self->html("</div>\n");
 
@@ -206,6 +217,30 @@ sub compare_snapshots {
     $self->html("</div>");
   }
 
+
+}
+
+sub text2html {
+
+  my $text = shift;
+
+  $text =~ s{
+
+    →\ *(
+           [^[]+
+        )
+       \[
+        (
+           [^\]]+
+        )
+       \]
+  }{
+
+   "<a href='http://renenyffenegger.ch/notes/development/version-control-systems/$1'>$2</a>"
+
+  }gex;
+
+  $text;
 
 }
 
