@@ -80,7 +80,7 @@ sub exec {
 
   chdir $self->{top_dir} . '/repos/' . $self->{cur_dirs}->[$repo_no];
 
-  my $command_out = readpipe ($command);
+  my $command_out = readpipe ("$command 2>&1");
   $self->html (escape_html($command_out));
 
   $self->html("</pre></code>\n");
@@ -153,6 +153,7 @@ sub compare_snapshots {
   my $repo_no = shift;
 
   my @new_files;
+  my @deleted_files;
   my @changed_files;
 # File::DirCompare->compare("$snapshot_dirs[$working_dir_no]/snapshot.$last_snapshot_command_numbers[$working_dir_no]", "$snapshot_dirs[$working_dir_no]/snapshot.$command_counter", sub 
 
@@ -172,9 +173,11 @@ sub compare_snapshots {
      if (! $prev) {
  
        if (-f $new) {
+       # A new file, add it:
          push @new_files, $new;
        }
        else {
+       # A new directory, add each file under the new directory:
          find( {no_chdir => 1, wanted => sub {
  
               my $file = $_;
@@ -186,40 +189,50 @@ sub compare_snapshots {
          }, $new);
        }
      } elsif (! $new) {
-         die;
+
+         if (-f $prev) {
+         # A file was deleted. Add it to the list of deleted files
+           push @deleted_files, $prev;
+         }
+         else {
+           die;
+         }
+
+
      } else {
- 
+
+     # A file has changed
        push @changed_files, $new;
      }
    });
+
+  $self -> print_file_list('New files'    , 'new-files'    , $repo_no, $curr_snap_no  , \@new_files    );   
+  $self -> print_file_list('Changed files', 'changed-files', $repo_no, $curr_snap_no  , \@changed_files);   
+  $self -> print_file_list('Deleted files', 'deleted-files', $repo_no, $curr_snap_no-1, \@deleted_files);   
+
+}
+
+sub print_file_list {
+  my $self         = shift;
+  my $title        = shift;
+  my $css_class    = shift;
+  my $repo_no      = shift;
+  my $curr_snap_no = shift;
+  my $files_ref    = shift;
  
   my $counter = 0;
-  if (@new_files) {
-    $self->html("<div class='files-title'>New files</div><div class='new-files'>");
-    for my $new_file (@new_files) {
-       $new_file = File::Spec -> abs2rel($new_file, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
-       $self->html("<code class='filename'>$new_file</code>");
+  if (@$files_ref) {
+    $self->html("<div class='files-title'>$title</div><div class='$css_class'>");
  
-       $self->html("<br>") if (++$counter < @new_files);
-    }
-    $self->html("</div>");
-  }
+    for my $file_name (@$files_ref) {
+       $file_name = File::Spec -> abs2rel($file_name, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
+       $self->html("<code class='filename'>$file_name</code>");
  
-  $counter = 0;
-  if (@changed_files) {
-    $self->html("<div class='files-title'>Changed files</div><div class='changed-files'>");
- 
-    for my $changed_file (@changed_files) {
-       $changed_file = File::Spec -> abs2rel($changed_file, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
-       $self->html("<code class='filename'>$changed_file</code>");
- 
-       $self->html("<br>") if (++$counter < @changed_files);
+       $self->html("<br>") if (++$counter < @$files_ref);
     }
  
     $self->html("</div>");
   }
-
-
 }
 
 sub text2html {
@@ -275,7 +288,7 @@ code.filename { font-family: Courier New; }
 
 .files-title { font-size: 16px; margin-top: 9px}
 
-.new-files > *, .changed-files > * {
+.new-files > *, .changed-files > *, .deleted-files > * {
   font-size: 12px;
 }
 
