@@ -27,7 +27,7 @@ sub new {
   $self -> {snapshot_dirs} = [ map { "snaps/$_"} @repos ];
   $self -> {cur_dirs     } = [ map { "$_/"     } @repos ];
 
-  $self -> {top_dir      } = cwd();
+  $self -> {top_dir      } = cwd() . '/';
 
   my $repo_no = 0;
   for my $repo_name (@repos) {
@@ -61,7 +61,7 @@ sub exec {
 
   my $repo_name = shift;
 
-  my $repo_no = $self->{repo_name_to_no}{$repo_name};
+  my $repo_no = $self->repo_no($repo_name);
   die "Unknown repo with name $repo_name" unless defined $repo_no;
 
   my $command   = shift;
@@ -97,6 +97,12 @@ sub exec {
 
   $self->html("</div>\n");
 
+}
+
+sub repo_no {
+  my $self      = shift;
+  my $repo_name = shift;
+  return $self->{repo_name_to_no}{$repo_name};
 }
 
 sub print_command {
@@ -145,6 +151,17 @@ sub make_snapshot {
   chdir $self->{top_dir};
 
  dircopy ("$self->{working_dirs}->[$repo_no]/", "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]");
+}
+
+sub repo_dir_full_path {
+
+  my $self      = shift;
+  my $repo_name = shift;
+
+  my $repo_no   = $self->repo_no($repo_name);
+
+  return $self->{top_dir} . $self->{working_dirs}->[$repo_no];
+
 }
 
 sub compare_snapshots {
