@@ -54,7 +54,8 @@ sub end {
 
   $self->html("</table>\n");
 
-  $self->html("<div id='repolink'>This page was created using <a href='https://github.com/ReneNyffenegger/git-internals'>GitInternals.pm</a>.</div>\n");
+  $self->html("<div id='repolink'>This page was created using <a href='https://github.com/ReneNyffenegger/git-internals'>GitInternals.pm</a>.
+    <br>See also <a href='http://renenyffenegger.ch/development/git-internals/index.html'>list of other html pages</a> created with GitInternals.pm.</div>\n");
   
   $self->html("</body></html>\n");
 
@@ -104,6 +105,19 @@ sub exec {
 
 }
 
+sub text {
+  my $self = shift;
+  my $text = shift;
+
+  $self->html("<div class='outNeutral'>");
+
+  $self->html("<p class='txt'>" . text2html($text) . "</p>\n");
+
+  $self->html("</div>\n");
+
+
+}
+
 sub repo_no {
   my $self      = shift;
   my $repo_name = shift;
@@ -122,7 +136,7 @@ sub print_command {
 
   my $cur_dir = $self->{cur_dirs}->[$repo_no];
 
-  print {$self->{html_out}} "<span class='cur-dir'>$cur_dir</span>&gt; <b>$command_html</b>\n";
+  $self->html("<span class='cur-dir'>$cur_dir</span>&gt; <b>$command_html</b>\n");
 }
 
 sub html {
@@ -297,11 +311,13 @@ sub open_html {
   print {$self->{html_out}} q{<style type="text/css">
 * { font-family: Liberation Sans ; }
 
-div.out0, div.out1, div.out2 {padding-left: 20px}
+
+div.out0, div.out1, div.out2, div.outNeutral {padding-left: 20px}
 
 div.out0 {border-left: 5px solid red  }
 div.out1 {border-left: 5px solid blue }
 div.out2 {border-left: 5px solid green}
+div.outNeutral {border-left: 5px solid white}
 
 
 code.shell {width: 100%; display: block; background-color: #f2f4fe; spacing: 2px;}
