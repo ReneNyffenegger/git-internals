@@ -52,7 +52,12 @@ sub end {
 
   my $self = shift;
 
-  print {$self->{html_out}} "</table></body></html>\n";
+  $self->html("</table>\n");
+
+  $self->html("<div id='repolink'>This page was created using <a href='https://github.com/ReneNyffenegger/git-internals'>GitInternals.pm</a>.</div>\n");
+  
+  $self->html("</body></html>\n");
+
   close $self->{html_out};
 }
 
@@ -321,6 +326,18 @@ h1.title {
 table {
  border:collapse;
 }
+
+#repolink {
+  background-color: #ccffbb;
+
+  padding-top:    20px;
+  padding-bottom: 20px;
+  padding-left:   20px;
+
+  margin-top: 100px;
+  border-top: 3px solid #00a000;
+
+}
 </style>
 };
 
@@ -328,7 +345,6 @@ table {
 
   print {$self->{html_out}} "<table>";
 }
-
 
 1;
 
