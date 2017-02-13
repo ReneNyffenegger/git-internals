@@ -8,6 +8,7 @@ use File::Basename;
 use File::Copy::Recursive 'dircopy';
 use File::DirCompare;
 use File::Find;
+use Time::Piece;
 use HTML::Escape;
 use Cwd;
 use utf8;
@@ -28,6 +29,8 @@ sub new {
   $self -> {cur_dirs     } = [ map { "$_/"     } @repos ];
 
   $self -> {top_dir      } = cwd() . '/';
+
+  $self -> {t}             = Time::Piece -> strptime('2016-01-01 00:00:00', '%Y-%m-%d %H:%M:%S');
 
   my $repo_no = 0;
   for my $repo_name (@repos) {
@@ -86,7 +89,10 @@ sub exec {
 
   chdir $self->{top_dir} . '/repos/' . $self->{cur_dirs}->[$repo_no];
 
+# http://renenyffenegger.ch/notes/Linux/shell/commands/faketime
+  my $faketime = $self->{t}->strftime('faketime -f "@%Y-%m-%d %H:%M:%S" '); $self->{t} += 60;
   my $command_out = readpipe ("$command 2>&1");
+
   $self->html (escape_html($command_out));
 
   $self->html("</pre></code>\n");
