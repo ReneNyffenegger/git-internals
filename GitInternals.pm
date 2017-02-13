@@ -107,6 +107,9 @@ sub exec { #_{
   if (not $options{no_cmp}) {
     $self -> compare_snapshots($repo_no);
   }
+  else {
+    $self->html("<td></td><td></td><td></td>\n");
+  }
   $self->html("</tr>");
 
 
@@ -383,4 +386,3 @@ td {
 } #_}
 
 1;
-
