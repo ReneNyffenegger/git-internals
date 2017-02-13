@@ -15,7 +15,7 @@ use utf8;
 
 use open ':utf8';
 
-sub new {
+sub new { #_{
 
   my $self = {};
   bless $self, shift;
@@ -49,9 +49,9 @@ sub new {
   $self -> open_html;
 
   return $self;
-}
+} #_}
 
-sub end {
+sub end { #_{
 
   my $self = shift;
 
@@ -63,9 +63,9 @@ sub end {
   $self->html("</body></html>\n");
 
   close $self->{html_out};
-}
+} #_}
 
-sub exec {
+sub exec { #_{
   my $self = shift;
 
   my $repo_name = shift;
@@ -76,6 +76,8 @@ sub exec {
   my $command   = shift;
 
   my %options   = @_;
+
+  $self->html("<tr><td>");
 
   $self->html("<div class='out$repo_no'>");
 
@@ -97,21 +99,27 @@ sub exec {
 
   $self->html("</pre></code>\n");
 
+  $self->html("</div>\n");
+  $self->html("</td>");
+
   $self -> make_snapshot($repo_no);
 
   if (not $options{no_cmp}) {
     $self -> compare_snapshots($repo_no);
   }
+  $self->html("</tr>");
+
 
   if ($options{text_post}) {
+    $self->html("<tr><td colspan='4'>");
     $self->html("<p class='txt'>" . text2html($options{text_post}) . "</p>\n");
+    $self->html("</td></tr>");
   }
 
-  $self->html("</div>\n");
 
-}
+} #_}
 
-sub text {
+sub text { #_{
   my $self = shift;
   my $text = shift;
 
@@ -122,15 +130,15 @@ sub text {
   $self->html("</div>\n");
 
 
-}
+} #_}
 
-sub repo_no {
+sub repo_no { #_{
   my $self      = shift;
   my $repo_name = shift;
   return $self->{repo_name_to_no}{$repo_name};
-}
+} #_}
 
-sub print_command {
+sub print_command { #_{
 
   my $self    = shift;
   my $repo_no = shift;
@@ -143,17 +151,17 @@ sub print_command {
   my $cur_dir = $self->{cur_dirs}->[$repo_no];
 
   $self->html("<span class='cur-dir'>$cur_dir</span>&gt; <b>$command_html</b>\n");
-}
+} #_}
 
-sub html {
+sub html { #_{
 
   my $self      = shift;
   my $html_text = shift;
 
   print {$self->{html_out}} $html_text;
-}
+} #_}
 
-sub init_directories {
+sub init_directories { #_{
 
   my $self = shift;
 
@@ -164,9 +172,9 @@ sub init_directories {
       }
       mkdir  $dir or die;
   }
-}
+} #_}
 
-sub make_snapshot {
+sub make_snapshot { #_{
 
   my $self    = shift;
   my $repo_no = shift;
@@ -176,9 +184,9 @@ sub make_snapshot {
   chdir $self->{top_dir};
 
  dircopy ("$self->{working_dirs}->[$repo_no]/", "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]");
-}
+} #_}
 
-sub repo_dir_full_path {
+sub repo_dir_full_path { #_{
 
   my $self      = shift;
   my $repo_name = shift;
@@ -187,9 +195,9 @@ sub repo_dir_full_path {
 
   return $self->{top_dir} . $self->{working_dirs}->[$repo_no];
 
-}
+} #_}
 
-sub compare_snapshots {
+sub compare_snapshots { #_{
 
   my $self = shift;
   my $repo_no = shift;
@@ -197,7 +205,6 @@ sub compare_snapshots {
   my @new_files;
   my @deleted_files;
   my @changed_files;
-# File::DirCompare->compare("$snapshot_dirs[$working_dir_no]/snapshot.$last_snapshot_command_numbers[$working_dir_no]", "$snapshot_dirs[$working_dir_no]/snapshot.$command_counter", sub 
 
   chdir $self->{top_dir};
 
@@ -212,7 +219,7 @@ sub compare_snapshots {
      my ($prev, $new) = @_;
  
      my $type  = -d ($new || $prev) ? "directory" : "file";
-     if (! $prev) {
+     if (! $prev) {     #_{ New file or directory
  
        if (-f $new) {
        # A new file, add it:
@@ -229,9 +236,9 @@ sub compare_snapshots {
  
            }
          }, $new);
-       }
-     } elsif (! $new) {
-
+       } #_}
+     } elsif (! $new) { #_{ deleted file
+ 
          if (-f $prev) {
          # A file was deleted. Add it to the list of deleted files
            push @deleted_files, $prev;
@@ -240,21 +247,25 @@ sub compare_snapshots {
            die;
          }
 
-
-     } else {
+ #_}
+     } else {           #_{ changed file
 
      # A file has changed
        push @changed_files, $new;
-     }
+     } #_}
    });
 
+  $self->html("<td>");
   $self -> print_file_list('New files'    , 'new-files'    , $repo_no, $curr_snap_no  , \@new_files    );   
+  $self->html("</td><td>");
   $self -> print_file_list('Changed files', 'changed-files', $repo_no, $curr_snap_no  , \@changed_files);   
+  $self->html("</td><td>");
   $self -> print_file_list('Deleted files', 'deleted-files', $repo_no, $curr_snap_no-1, \@deleted_files);   
+  $self->html("</td>");
 
-}
+} #_}
 
-sub print_file_list {
+sub print_file_list { #_{
   my $self         = shift;
   my $title        = shift;
   my $css_class    = shift;
@@ -275,9 +286,9 @@ sub print_file_list {
  
     $self->html("</div>");
   }
-}
+} #_}
 
-sub text2html {
+sub text2html { #_{
 
   my $text = shift;
 
@@ -299,9 +310,9 @@ sub text2html {
 
   $text;
 
-}
+} #_}
 
-sub open_html {
+sub open_html { #_{
 
   my $self = shift;
 
@@ -348,6 +359,9 @@ h1.title {
 table {
  border:collapse;
 }
+td {
+  vertical-align: top
+}
 
 #repolink {
   background-color: #ccffbb;
@@ -365,8 +379,8 @@ table {
 
   print {$self->{html_out}} "</head><body><h1 class='title'>$title</h1>";
 
-  print {$self->{html_out}} "<table>";
-}
+  print {$self->{html_out}} "<table border=1>";
+} #_}
 
 1;
 
