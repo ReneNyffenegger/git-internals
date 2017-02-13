@@ -59,7 +59,7 @@ sub end { #_{
 
   $self->html("<div id='repolink'>This page was created using <a href='https://github.com/ReneNyffenegger/git-internals'>GitInternals.pm</a>.
     <br>See also <a href='http://renenyffenegger.ch/development/git-internals/index.html'>list of other html pages</a> created with GitInternals.pm.</div>\n");
-  
+
   $self->html("</body></html>\n");
 
   close $self->{html_out};
@@ -93,7 +93,7 @@ sub exec { #_{
 
 # http://renenyffenegger.ch/notes/Linux/shell/commands/faketime
   my $faketime = $self->{t}->strftime('faketime -f "@%Y-%m-%d %H:%M:%S" '); $self->{t} += 60;
-  my $command_out = readpipe ("$command 2>&1");
+  my $command_out = readpipe ("$faketime $command 2>&1");
 
   $self->html (escape_html($command_out));
 
@@ -218,20 +218,58 @@ sub compare_snapshots { #_{
     my $array_ref = shift;
     my $filename  = shift;
 
-    my $file = {filename => $filename};
+    my $file = {};
 
-     if ($filename =~ m!\.git/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) {
+    $filename = File::Spec -> abs2rel($filename, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
+#   print "filename = $filename\n";
+    if ($filename =~ m!^.git/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) {
 
        my $object_id = "$1$2";
+
+       my $filename_obj = "obj_$object_id.html";
+
+
+       $filename = ".git/objects/<a class='filename' href='$filename_obj'>$1/$2</a>";
        my $cwd_safe = cwd();
        chdir ($self->{working_dirs}->[$repo_no]);
        my $object_type = readpipe("git cat-file -t $object_id");
        chomp $object_type;
+
+       my $object_content = readpipe("git cat-file -p $object_id");;
+
        chdir $cwd_safe;
+
+       open (my $obj_f, '>', $self->{name} . "/$filename_obj") or die;
+
+       my $title = "Git $object_type-object $object_id";
+       print $obj_f "<!DOCTYPE html>\n";
+       print $obj_f "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'><title>$title</title>\n";
+       print $obj_f '<style type="text/css">
+
+          pre {border: 1px solid black; margin: 3px; padding: 4px}
+
+          pre.blob   {background-color: #e5f50f;}
+          pre.commit {background-color: #f3c248;}
+          pre.tree   {background-color: #ecc4ff;}
+          pre.tag    {background-color: #f4c95f;}
+
+       </style></head><body>
+       ';
+
+
+       print $obj_f "<h1>$title</h1>";
+       print $obj_f "The content of this $object_type object is";
+       print $obj_f "<code><pre class='$object_type'>$object_content</pre></code>";
+       print $obj_f "<p><hr><a href='index.html'>Return to example</a>";
+       print $obj_f "</body></html>";
+
        $file->{object}->{id  } = $object_id;
        $file->{object}->{type} = $object_type;
 
-     }
+    }
+
+    $file->{filename} = $filename;
+
 
     push @$array_ref, $file;
 
@@ -242,14 +280,14 @@ sub compare_snapshots { #_{
      "$self->{snapshot_dirs}->[$repo_no]/$prev_snap_no",
      "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no",
   sub {
- 
+
      my ($prev, $new) = @_;
- 
+
      my $type  = -d ($new || $prev) ? "directory" : "file";
      if (! $prev) {     #_{ New file or directory
 
 #      print "Compare, new = $new\n";
- 
+
        if (-f $new) { #_{
        # A new file, add it:
          &$add_file(\@new_files, $new);
@@ -258,18 +296,18 @@ sub compare_snapshots { #_{
        else { #_{
        # A new directory, add each file under the new directory:
          find( {no_chdir => 1, wanted => sub {
- 
+
               my $file = $_;
- 
+
               return if -d $file;
               &$add_file(\@new_files, $file);
 #             push @new_files, $file;
- 
+
            }
          }, $new); #_}
        } #_}
      } elsif (! $new) { #_{ deleted file
- 
+
          if (-f $prev) {
          # A file was deleted. Add it to the list of deleted files
 #          push @deleted_files, $prev;
@@ -289,11 +327,11 @@ sub compare_snapshots { #_{
    });
 
   $self->html("<td>");
-  $self -> print_file_list('New files'    , 'new-files'    , $repo_no, $curr_snap_no  , \@new_files    );   
+  $self -> print_file_list('New files'    , 'new-files'    , $repo_no, $curr_snap_no  , \@new_files    );
   $self->html("</td><td>");
-  $self -> print_file_list('Changed files', 'changed-files', $repo_no, $curr_snap_no  , \@changed_files);   
+  $self -> print_file_list('Changed files', 'changed-files', $repo_no, $curr_snap_no  , \@changed_files);
   $self->html("</td><td>");
-  $self -> print_file_list('Deleted files', 'deleted-files', $repo_no, $curr_snap_no-1, \@deleted_files);   
+  $self -> print_file_list('Deleted files', 'deleted-files', $repo_no, $curr_snap_no-1, \@deleted_files);
   $self->html("</td>");
 
 } #_}
@@ -305,15 +343,16 @@ sub print_file_list { #_{
   my $repo_no      = shift;
   my $curr_snap_no = shift;
   my $files_ref    = shift;
- 
+
   my $counter = 0;
   if (@$files_ref) {
 #   $self->html("<div class='files-title'>$title</div><div class='$css_class'>");
     $self->html(                                     "<div class='$css_class'>");
- 
+
     for my $file (@$files_ref) {
 
-       my $file_name = File::Spec -> abs2rel($file->{filename}, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
+       my $file_name = $file->{filename};
+#      my $file_name = File::Spec -> abs2rel($file->{filename}, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
 
        my $object_type='';
        if (my $object = $file->{object}) {
@@ -321,10 +360,10 @@ sub print_file_list { #_{
        }
 
        $self->html("<code class='filename'>$file_name</code>$object_type");
- 
+
        $self->html("<br>") if (++$counter < @$files_ref);
     }
- 
+
     $self->html("</div>");
   }
 } #_}
@@ -357,15 +396,21 @@ sub open_html { #_{
 
   my $self = shift;
 
-  open ($self->{html_out}, '>:encoding(utf-8)', "$self->{name}.html") or die;
+  unless (-d $self->{name}) {
+    mkdir $self->{name} or die;
+  }
+
+  unlink glob "$self->{name}/*.html";
+
+  open ($self->{html_out}, '>:encoding(utf-8)', "$self->{name}/index.html") or die;
 
 
   my $title = "git $self->{name}";
 
   print {$self->{html_out}} "<!DOCTYPE html>\n";
   print {$self->{html_out}} "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'><title>$title</title></head>\n";
- 
- 
+
+
   print {$self->{html_out}} q{<style type="text/css">
 * { font-family: Liberation Sans ; }
 
@@ -380,7 +425,7 @@ div.outNeutral {border-left: 5px solid white}
 
 code.shell {width: 100%; display: block; background-color: #f2f4fe; spacing: 2px;}
 pre, pre * { font-family: Courier New; font-size:14px}
-code.filename { font-family: Courier New; }
+.filename { font-family: Courier New; }
 
 .files-title { font-size: 16px; margin-top: 9px}
 
@@ -400,7 +445,7 @@ span.obj-type {
 
 h1.title {
   color:blue;
-} 
+}
 table {
  border:collapse;
 }
