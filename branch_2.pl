@@ -4,7 +4,7 @@ use strict;
 
 use GitInternals;
 
-my $gi = new GitInternals ( [ 'Alice', 'Bob']);
+my $gi = GitInternals -> new ( [ 'Alice', 'Bob']);
 
 $gi -> exec('Alice', 'git init');
 
@@ -41,3 +41,5 @@ $gi -> exec('Bob'  , 'git branch');
 $gi -> exec('Bob'  , 'git pull origin master');
 $gi -> exec('Bob'  , 'git merge master');
 $gi -> exec('Bob'  , 'cat numbers.txt');
+
+$gi -> end();
