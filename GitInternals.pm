@@ -237,6 +237,8 @@ sub compare_snapshots { #_{
 
        my $object_content = readpipe("git cat-file -p $object_id");;
 
+       $object_content =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
+
        chdir $cwd_safe;
 
        open (my $obj_f, '>', $self->{name} . "/$filename_obj") or die;
