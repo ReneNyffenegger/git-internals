@@ -3,11 +3,13 @@ package GitInternals;
 use warnings;
 use strict;
 
+use Digest::MD5::File qw(file_md5_hex);
 use File::Path qw(rmtree);
 use File::Basename;
 use File::Copy::Recursive 'dircopy';
 use File::DirCompare;
 use File::Find;
+use File::Slurp;
 use Time::Piece;
 use HTML::Escape;
 use Cwd;
@@ -221,54 +223,59 @@ sub compare_snapshots { #_{
     my $file = {};
 
     $filename = File::Spec -> abs2rel($filename, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
-#   print "filename = $filename\n";
-    if ($filename =~ m!^.git/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) {
+
+
+    if ($filename =~ m!^.git/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) { #_{
 
        my $object_id = "$1$2";
 
        my $filename_obj = "obj_$object_id.html";
 
-
        $filename = ".git/objects/<a class='filename' href='$filename_obj'>$1/$2</a>";
+
        my $cwd_safe = cwd();
        chdir ($self->{working_dirs}->[$repo_no]);
-       my $object_type = readpipe("git cat-file -t $object_id");
-       chomp $object_type;
 
-       my $object_content = readpipe("git cat-file -p $object_id");;
+          my $object_type = readpipe("git cat-file -t $object_id");
+          chomp $object_type;
 
-       $object_content =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
+          my $object_content = readpipe("git cat-file -p $object_id");;
+          $object_content =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
 
        chdir $cwd_safe;
 
-       open (my $obj_f, '>', $self->{name} . "/$filename_obj") or die;
-
        my $title = "Git $object_type-object $object_id";
-       print $obj_f "<!DOCTYPE html>\n";
-       print $obj_f "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'><title>$title</title>\n";
-       print $obj_f '<style type="text/css">
+       $self -> write_html_linked_files($filename_obj, $title, <<CONTENT);
+The content of this $object_type object is;
+<code><pre class='$object_type'>$object_content</pre></code>
+CONTENT
 
-          pre {border: 1px solid black; margin: 3px; padding: 4px}
-
-          pre.blob   {background-color: #e5f50f;}
-          pre.commit {background-color: #f3c248;}
-          pre.tree   {background-color: #ecc4ff;}
-          pre.tag    {background-color: #f4c95f;}
-
-       </style></head><body>
-       ';
-
-
-       print $obj_f "<h1>$title</h1>";
-       print $obj_f "The content of this $object_type object is";
-       print $obj_f "<code><pre class='$object_type'>$object_content</pre></code>";
-       print $obj_f "<p><hr><a href='index.html'>Return to example</a>";
-       print $obj_f "</body></html>";
 
        $file->{object}->{id  } = $object_id;
        $file->{object}->{type} = $object_type;
+    } #_}
+    else { #_{
 
-    }
+      if ($filename ne '.git/index') {
+       my $cwd_safe = cwd();
+       chdir ($self->{working_dirs}->[$repo_no]);
+
+          my $filename_ = file_md5_hex($filename) . '.html';
+          my $filecontent = read_file($filename, binmode => ':utf8');
+          $filecontent =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
+
+       chdir $cwd_safe;
+
+       $self->write_html_linked_files($filename_, $filename, <<CONTENT);
+The content of $filename is:
+<code><pre>$filecontent</pre></code>
+CONTENT
+
+       $filename = "<a class='filename' href='$filename_'>$filename</a>";
+
+       }
+
+    } #_}
 
     $file->{filename} = $filename;
 
@@ -281,7 +288,7 @@ sub compare_snapshots { #_{
   File::DirCompare->compare(
      "$self->{snapshot_dirs}->[$repo_no]/$prev_snap_no",
      "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no",
-  sub {
+  sub { #_{
 
      my ($prev, $new) = @_;
 
@@ -326,7 +333,7 @@ sub compare_snapshots { #_{
 #      push @changed_files, $new;
        &$add_file(\@changed_files, $new);
      } #_}
-   });
+   }); #_}
 
   $self->html("<td>");
   $self -> print_file_list('New files'    , 'new-files'    , $repo_no, $curr_snap_no  , \@new_files    );
@@ -477,5 +484,40 @@ td {
 
   $self->html("<tr><td>Command</td><td>New files</td><td>Changed files</td><td>Deleted files</td></tr>\n");
 } #_}
+
+sub write_html_linked_files { #_{
+
+  my $self     = shift;
+  my $filename = shift;
+  my $title    = shift;
+  my $content  = shift;
+
+
+  open (my $f, '>', $self->{name} . "/$filename") or die "$!\n" . cwd() . "\n$filename";
+
+  print $f "<!DOCTYPE html>\n";
+  print $f "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'><title>$title</title>\n";
+  print $f '<style type="text/css">
+
+     pre {border: 1px solid black; margin: 3px; padding: 4px}
+
+     pre.blob   {background-color: #e5f50f;}
+     pre.commit {background-color: #f3c248;}
+     pre.tree   {background-color: #ecc4ff;}
+     pre.tag    {background-color: #f4c95f;}
+
+  </style></head><body>
+  ';
+
+
+  print $f "<h1>$title</h1>";
+
+  print $f $content;
+
+  print $f "<p><hr><a href='index.html'>Return to example</a></body></html>";
+
+
+} #_}
+
 
 1;
