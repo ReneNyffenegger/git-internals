@@ -4,7 +4,7 @@ use strict;
 
 use GitInternals;
 
-my $gi = new GitInternals ( [ 'Alice']);
+my $gi = GitInternals -> new(['Alice']);
 
 $gi -> exec('Alice', 'git init', no_cmp => 1);
 $gi -> exec('Alice', 'printf "foo\nbar\nbaz"   > foo-bar-baz.txt'  );
