@@ -214,6 +214,30 @@ sub compare_snapshots { #_{
   my $curr_snap_no = $self->{snapshot_no}->[$repo_no];
   my $prev_snap_no = $curr_snap_no - 1;
 
+  my $add_file = sub {
+    my $array_ref = shift;
+    my $filename  = shift;
+
+    my $file = {filename => $filename};
+
+     if ($filename =~ m!\.git/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) {
+
+       my $object_id = "$1$2";
+       my $cwd_safe = cwd();
+       chdir ($self->{working_dirs}->[$repo_no]);
+       my $object_type = readpipe("git cat-file -t $object_id");
+       chomp $object_type;
+       chdir $cwd_safe;
+       $file->{object}->{id  } = $object_id;
+       $file->{object}->{type} = $object_type;
+
+     }
+
+    push @$array_ref, $file;
+
+
+  };
+
   File::DirCompare->compare(
      "$self->{snapshot_dirs}->[$repo_no]/$prev_snap_no",
      "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no",
@@ -223,28 +247,33 @@ sub compare_snapshots { #_{
  
      my $type  = -d ($new || $prev) ? "directory" : "file";
      if (! $prev) {     #_{ New file or directory
+
+#      print "Compare, new = $new\n";
  
-       if (-f $new) {
+       if (-f $new) { #_{
        # A new file, add it:
-         push @new_files, $new;
-       }
-       else {
+         &$add_file(\@new_files, $new);
+#        push @new_files, $new;
+       } #_}
+       else { #_{
        # A new directory, add each file under the new directory:
          find( {no_chdir => 1, wanted => sub {
  
               my $file = $_;
  
               return if -d $file;
-              push @new_files, $file;
+              &$add_file(\@new_files, $file);
+#             push @new_files, $file;
  
            }
-         }, $new);
+         }, $new); #_}
        } #_}
      } elsif (! $new) { #_{ deleted file
  
          if (-f $prev) {
          # A file was deleted. Add it to the list of deleted files
-           push @deleted_files, $prev;
+#          push @deleted_files, $prev;
+           &$add_file(\@deleted_files, $prev);
          }
          else {
            die;
@@ -254,7 +283,8 @@ sub compare_snapshots { #_{
      } else {           #_{ changed file
 
      # A file has changed
-       push @changed_files, $new;
+#      push @changed_files, $new;
+       &$add_file(\@changed_files, $new);
      } #_}
    });
 
@@ -270,7 +300,7 @@ sub compare_snapshots { #_{
 
 sub print_file_list { #_{
   my $self         = shift;
-  my $title        = shift;
+  my $title        = shift;  # TODO currently not used anymore
   my $css_class    = shift;
   my $repo_no      = shift;
   my $curr_snap_no = shift;
@@ -278,11 +308,19 @@ sub print_file_list { #_{
  
   my $counter = 0;
   if (@$files_ref) {
-    $self->html("<div class='files-title'>$title</div><div class='$css_class'>");
+#   $self->html("<div class='files-title'>$title</div><div class='$css_class'>");
+    $self->html(                                     "<div class='$css_class'>");
  
-    for my $file_name (@$files_ref) {
-       $file_name = File::Spec -> abs2rel($file_name, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
-       $self->html("<code class='filename'>$file_name</code>");
+    for my $file (@$files_ref) {
+
+       my $file_name = File::Spec -> abs2rel($file->{filename}, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
+
+       my $object_type='';
+       if (my $object = $file->{object}) {
+         $object_type = " <span class='obj-type'>[$object->{type}]</span>";
+       }
+
+       $self->html("<code class='filename'>$file_name</code>$object_type");
  
        $self->html("<br>") if (++$counter < @$files_ref);
     }
@@ -356,6 +394,10 @@ code.filename { font-family: Courier New; }
 
 p.txt { color: #114 }
 
+span.obj-type {
+  color: gray;
+}
+
 h1.title {
   color:blue;
 } 
@@ -363,7 +405,9 @@ table {
  border:collapse;
 }
 td {
-  vertical-align: top
+  vertical-align: top;
+  border-right: 1px solid #f93;
+  padding: 10px;
 }
 
 #repolink {
@@ -382,7 +426,9 @@ td {
 
   print {$self->{html_out}} "</head><body><h1 class='title'>$title</h1>";
 
-  print {$self->{html_out}} "<table border=1>";
+  print {$self->{html_out}} "<table border=0>";
+
+  $self->html("<tr><td>Command</td><td>New files</td><td>Changed files</td><td>Deleted files</td></tr>\n");
 } #_}
 
 1;
