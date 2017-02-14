@@ -3,6 +3,7 @@ package GitInternals;
 use warnings;
 use strict;
 
+use Cwd;
 use Digest::MD5::File qw(file_md5_hex);
 use File::Path qw(rmtree);
 use File::Basename;
@@ -10,9 +11,10 @@ use File::Copy::Recursive 'dircopy';
 use File::DirCompare;
 use File::Find;
 use File::Slurp;
-use Time::Piece;
 use HTML::Escape;
-use Cwd;
+use Text::Diff::FormattedHTML;
+use Time::Piece;
+
 use utf8;
 
 use open ':utf8';
@@ -102,9 +104,11 @@ sub exec { #_{
   $self->html("</pre></code>\n");
 
   $self->html("</div>\n");
-  $self->html("</td>");
 
-  $self -> make_snapshot($repo_no);
+  my $new_snapshot_no = $self -> make_snapshot($repo_no);
+  $self -> html("<div class='cur-snap'>snap no: $new_snapshot_no</div>");
+
+  $self->html("</td>");
 
   if (not $options{no_cmp}) {
     $self -> compare_snapshots($repo_no);
@@ -188,7 +192,9 @@ sub make_snapshot { #_{
 
   chdir $self->{top_dir};
 
- dircopy ("$self->{working_dirs}->[$repo_no]/", "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]");
+  dircopy ("$self->{working_dirs}->[$repo_no]/", "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]");
+
+  return $self->{snapshot_no}->[$repo_no];
 } #_}
 
 sub repo_dir_full_path { #_{
@@ -216,16 +222,19 @@ sub compare_snapshots { #_{
   my $curr_snap_no = $self->{snapshot_no}->[$repo_no];
   my $prev_snap_no = $curr_snap_no - 1;
 
-  my $add_file = sub {
-    my $array_ref = shift;
-    my $filename  = shift;
+
+  my $add_file = sub { #_{
+    my $array_ref    = shift;
+    my $filename     = shift;
+    my $snap_no      = shift;
+    my $snap_no_prev = shift;  # only passed (and hence defined) if used for diff'ing files
 
     my $file = {};
 
-    $filename = File::Spec -> abs2rel($filename, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
+    $filename = File::Spec -> abs2rel($filename, "$self->{snapshot_dirs}->[$repo_no]/$snap_no");
 
 
-    if ($filename =~ m!^.git/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) { #_{
+    if ($filename =~ m!^.git/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) { #_{ A git object (blob, tree, commit, tag)
 
        my $object_id = "$1$2";
 
@@ -233,8 +242,8 @@ sub compare_snapshots { #_{
 
        $filename = ".git/objects/<a class='filename' href='$filename_obj'>$1/$2</a>";
 
-       my $cwd_safe = cwd();
-       chdir ($self->{working_dirs}->[$repo_no]);
+       my $cwd_safe = cwd(); #_{
+          chdir ($self->{working_dirs}->[$repo_no]);
 
           my $object_type = readpipe("git cat-file -t $object_id");
           chomp $object_type;
@@ -242,7 +251,7 @@ sub compare_snapshots { #_{
           my $object_content = readpipe("git cat-file -p $object_id");;
           $object_content =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
 
-       chdir $cwd_safe;
+       chdir $cwd_safe; #_}
 
        my $title = "Git $object_type-object $object_id";
        $self -> write_html_linked_files($filename_obj, $title, <<CONTENT);
@@ -254,36 +263,65 @@ CONTENT
        $file->{object}->{id  } = $object_id;
        $file->{object}->{type} = $object_type;
     } #_}
-    else { #_{
+    else { #_{  Not a git object (eg .git/index or others)
 
-      if ($filename ne '.git/index') {
-       my $cwd_safe = cwd();
-       chdir ($self->{working_dirs}->[$repo_no]);
+      my $filecontent;
+      my $filename_md5_hex;
 
-          my $filename_ = file_md5_hex($filename) . '.html';
-          my $filecontent = read_file($filename, binmode => ':utf8');
-          $filecontent =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
+      my $cwd_safe = cwd(); #_{
 
-       chdir $cwd_safe;
+         if (defined $snap_no_prev) {
+           chdir ("$self->{snapshot_dirs}->[$repo_no]");
+           die unless -e "$snap_no/$filename";
+           die unless -e "$snap_no_prev/$filename";
 
-       $self->write_html_linked_files($filename_, $filename, <<CONTENT);
+           $filename_md5_hex = rand() . '.html';  # TODO use no rand() !
+           my $diff = diff_files("$snap_no_prev/$filename", "$snap_no/$filename");
+
+           $filecontent = $diff;
+         }
+         else {
+           chdir ("$self->{snapshot_dirs}->[$repo_no]/$snap_no");
+           die unless -e $filename;
+           $filename_md5_hex = file_md5_hex($filename) . '.html';
+
+
+           if ($filename eq '.git/index') {
+              $filecontent = readpipe('git ls-files --stage');
+           }
+           else {
+              $filecontent = read_file($filename, binmode => ':utf8');
+           }
+         }
+
+         $filecontent =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
+#        }
+#        else {
+#          print "Not found: $filename (snap_no: $snap_no, repo_no: $repo_no)\n";
+#        $filename_md5_hex = rand() . '.html';
+#        $filecontent = '????';
+#        }
+
+        
+         $filecontent = <<CONTENT;
 The content of $filename is:
 <code><pre>$filecontent</pre></code>
 CONTENT
 
-       $filename = "<a class='filename' href='$filename_'>$filename</a>";
+      chdir $cwd_safe; #_}
 
-       }
+      $self->write_html_linked_files($filename_md5_hex, $filename, $filecontent);
+
+      my ($file_path, $file_tail) = $filename =~ m!(.*?/?)([^/]+)$!;
+      $filename = "$file_path<a class='filename' href='$filename_md5_hex'>$file_tail</a>";
 
     } #_}
 
     $file->{filename} = $filename;
 
-
     push @$array_ref, $file;
 
-
-  };
+  }; #_}
 
   File::DirCompare->compare(
      "$self->{snapshot_dirs}->[$repo_no]/$prev_snap_no",
@@ -295,22 +333,16 @@ CONTENT
      my $type  = -d ($new || $prev) ? "directory" : "file";
      if (! $prev) {     #_{ New file or directory
 
-#      print "Compare, new = $new\n";
-
-       if (-f $new) { #_{
-       # A new file, add it:
-         &$add_file(\@new_files, $new);
-#        push @new_files, $new;
+       if (-f $new) { #_{ A new file, add it:
+         &$add_file(\@new_files, $new, $curr_snap_no);
        } #_}
-       else { #_{
-       # A new directory, add each file under the new directory:
+       else { #_{ A new directory, add each file under the new directory:
          find( {no_chdir => 1, wanted => sub {
 
               my $file = $_;
 
               return if -d $file;
-              &$add_file(\@new_files, $file);
-#             push @new_files, $file;
+              &$add_file(\@new_files, $file, $curr_snap_no);
 
            }
          }, $new); #_}
@@ -319,19 +351,17 @@ CONTENT
 
          if (-f $prev) {
          # A file was deleted. Add it to the list of deleted files
-#          push @deleted_files, $prev;
-           &$add_file(\@deleted_files, $prev);
+           &$add_file(\@deleted_files, $prev, $prev_snap_no);
          }
          else {
            die;
          }
 
- #_}
+     #_}
      } else {           #_{ changed file
 
      # A file has changed
-#      push @changed_files, $new;
-       &$add_file(\@changed_files, $new);
+       &$add_file(\@changed_files, $new, $curr_snap_no, $prev_snap_no);
      } #_}
    }); #_}
 
@@ -355,13 +385,11 @@ sub print_file_list { #_{
 
   my $counter = 0;
   if (@$files_ref) {
-#   $self->html("<div class='files-title'>$title</div><div class='$css_class'>");
-    $self->html(                                     "<div class='$css_class'>");
+    $self->html("<div class='$css_class'>");
 
     for my $file (@$files_ref) {
 
        my $file_name = $file->{filename};
-#      my $file_name = File::Spec -> abs2rel($file->{filename}, "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no");
 
        my $object_type='';
        if (my $object = $file->{object}) {
@@ -423,6 +451,7 @@ sub open_html { #_{
   print {$self->{html_out}} q{<style type="text/css">
 * { font-family: Liberation Sans ; }
 
+     body {margin: 0}
 
 div.out0, div.out1, div.out2, div.outNeutral {padding-left: 20px}
 
@@ -446,7 +475,12 @@ pre, pre * { font-family: Courier New; font-size:14px}
   color:#a38;
 }
 
+.cur-snap {
+  color: #999; font-size: 11px;
+}
+
 p.txt { color: #114 }
+
 
 span.obj-type {
   color: gray;
@@ -461,6 +495,7 @@ table {
 td {
   vertical-align: top;
   border-right: 1px solid #f93;
+  border-top:   1px solid #f93;
   padding: 10px;
 }
 
@@ -499,12 +534,45 @@ sub write_html_linked_files { #_{
   print $f "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'><title>$title</title>\n";
   print $f '<style type="text/css">
 
-     pre {border: 1px solid black; margin: 3px; padding: 4px}
+    * { font-family: Liberation Sans; sans-serif; }
 
-     pre.blob   {background-color: #e5f50f;}
-     pre.commit {background-color: #f3c248;}
-     pre.tree   {background-color: #ecc4ff;}
-     pre.tag    {background-color: #f4c95f;}
+    table {border-collapse: collapse}
+
+    /* ---------------------  start: css rules for diff ------------------ */
+
+    td {white-space: pre; font-family: monospace; font-size:16px; spacing: 4px}
+
+    td:nth-child(2) {border-right: black solid 1px; padding-right: 10px}
+    td:nth-child(3) {border-right: #999  solid 1px; padding-right: 10px;padding-left: 10px}
+    td:nth-child(4) {padding-left: 10px}
+
+    td:nth-child(1),
+    td:nth-child(2) {color: #999}
+
+    tr.disc_a td:nth-child(3),
+    tr.disc_b td:nth-child(4),
+    del {background-color: #fcc; color:#900;}
+    ins {background-color: #cfc; color:#090;}
+
+    del, ins {font-weight: bold}
+
+    ins {text-decoration: none} /* Remove annoying default underline of ins tag */
+
+    /* ---------------------  end: css rulecss rules for diff ------------------ */
+
+    h1 {font-family: sans-serif;}
+
+    body {margin: 0}
+
+    pre {border: 1px solid black; margin: 3px; padding: 4px}
+
+    pre.blob   {background-color: #e5f50f;}
+    pre.commit {background-color: #f3c248;}
+    pre.tree   {background-color: #ecc4ff;}
+    pre.tag    {background-color: #f4c95f;}
+
+    pre, pre * { font-family: Courier New; font-size:14px}
+    pre        {background-color: #ddd;}
 
   </style></head><body>
   ';
