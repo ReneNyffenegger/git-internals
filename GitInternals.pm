@@ -234,13 +234,14 @@ sub compare_snapshots { #_{
     $filename = File::Spec -> abs2rel($filename, "$self->{snapshot_dirs}->[$repo_no]/$snap_no");
 
 
-    if ($filename =~ m!^.git/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) { #_{ A git object (blob, tree, commit, tag)
+    if ($filename =~ m!^(.git/)?objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) { #_{ A git object (blob, tree, commit, tag)
 
-       my $object_id = "$1$2";
+       my $object_id = "$2$3";
 
        my $filename_obj = "obj_$object_id.html";
 
-       $filename = ".git/objects/<a class='filename' href='$filename_obj'>$1/$2</a>";
+       my $dot_git = $1 // '';
+       $filename = "${dot_git}objects/<a class='filename' href='$filename_obj'>$2/$3</a>";
 
        my $cwd_safe = cwd(); #_{
           chdir ($self->{working_dirs}->[$repo_no]);

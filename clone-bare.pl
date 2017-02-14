@@ -19,3 +19,5 @@ $gi -> exec('Alice', 'git commit -m "add foo/one.txt, foo/two.txt"', no_cmp => 1
 $gi -> exec('Depot', 'git clone --bare ' . $gi->repo_dir_full_path('Alice') . ' .');
 
 $gi -> exec('Bob'  , 'git clone '        . $gi->repo_dir_full_path('Depot') . ' .');
+
+$gi -> end;
