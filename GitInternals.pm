@@ -11,13 +11,17 @@ use File::Copy::Recursive 'dircopy';
 use File::DirCompare;
 use File::Find;
 use File::Slurp;
+use File::Which;
 use HTML::Escape;
 use Text::Diff::FormattedHTML;
 use Time::Piece;
 
 use utf8;
-
 use open ':utf8';
+
+BEGIN  {
+  die 'faketime must be installed' unless File::Which::which('faketime');
+}
 
 sub new { #_{
 
