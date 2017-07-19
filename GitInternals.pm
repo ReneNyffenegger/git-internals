@@ -14,6 +14,8 @@ use File::Slurp;
 use HTML::Escape;
 use Text::Diff::FormattedHTML;
 use Time::Piece;
+use lib '/home/rene/github/lib/perl-GraphViz-Diagram-GitRepository/lib';
+use GraphViz::Diagram::GitRepository;
 
 use utf8;
 
