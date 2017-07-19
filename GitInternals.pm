@@ -100,6 +100,7 @@ sub exec { #_{
 
   $self -> print_command($repo_no, $command);
 
+  # TODO: use $self->full_path_of_repo()
   chdir $self->{top_dir} . '/repos/' . $self->{cur_dirs}->[$repo_no];
 
 # http://renenyffenegger.ch/notes/Linux/shell/commands/faketime
@@ -111,6 +112,9 @@ sub exec { #_{
   $self->html("</pre></code>\n");
 
   $self->html("</div>\n");
+
+  my $git_repo_diagram = GraphViz::Diagram::GitRepository->new($self->full_path_of_repo($repo_no), "/tmp/$repo_no.$self->{snapshot_no}->[$repo_no].png");
+  $git_repo_diagram->create();
 
   my $new_snapshot_no = $self -> make_snapshot($repo_no);
   $self -> html("<div class='cur-snap'>snap no: $new_snapshot_no</div>");
@@ -620,6 +624,13 @@ sub cd_top_dir { #_{
   my $self = shift;
   chdir $self->{top_dir};
 
+} #_}
+
+sub full_path_of_repo { #_{
+  my $self    = shift;
+  my $repo_no = shift;
+
+  return $self->{top_dir} . '/repos/' . $self->{cur_dirs}->[$repo_no];
 } #_}
 
 1;
