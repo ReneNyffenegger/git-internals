@@ -1,5 +1,5 @@
 package GitInternals;
-
+#_{ use …
 use warnings;
 use strict;
 
@@ -11,6 +11,7 @@ use File::Copy::Recursive 'dircopy';
 use File::DirCompare;
 use File::Find;
 use File::Slurp;
+use File::Which;
 use HTML::Escape;
 use Text::Diff::FormattedHTML;
 use Time::Piece;
@@ -18,8 +19,12 @@ use lib '/home/rene/github/lib/perl-GraphViz-Diagram-GitRepository/lib';
 use GraphViz::Diagram::GitRepository;
 
 use utf8;
-
 use open ':utf8';
+#_}
+
+BEGIN  { #_{
+  die 'faketime must be installed' unless File::Which::which('faketime');
+} #_}
 
 sub new { #_{
 
@@ -181,7 +186,7 @@ sub init_directories { #_{
       if (-d $dir) {
         rmtree $dir or die "Could not remove $dir";
       }
-      mkdir  $dir or die;
+      mkdir  $dir or die "Couldn't create $dir in ", cwd();
   }
 } #_}
 
@@ -192,9 +197,25 @@ sub make_snapshot { #_{
 
   $self->{snapshot_no}->[$repo_no]++;
 
-  chdir $self->{top_dir};
+  $self->cd_top_dir();
 
   dircopy ("$self->{working_dirs}->[$repo_no]/", "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]");
+  
+  chdir $self->{working_dirs}->[$repo_no];
+
+  if (-e ".git/index") {
+
+    my $git_index_readable = readpipe("git ls-files --stage");
+
+    $self->cd_top_dir();
+
+    chdir "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]";
+
+    write_file(".git/index", $git_index_readable);
+  }
+  else {
+#   print ".git/index doesn't exists\n";
+  }
 
   return $self->{snapshot_no}->[$repo_no];
 } #_}
@@ -266,7 +287,7 @@ CONTENT
        $file->{object}->{id  } = $object_id;
        $file->{object}->{type} = $object_type;
     } #_}
-    else { #_{  Not a git object (eg .git/index or others)
+    else { #_{  Not a git object (eg .git/index, .git/HEAD, .git/COMMIT_EDITMSG, .git/logs/HEAD …)
 
       my $filecontent;
       my $filename_md5_hex;
@@ -279,6 +300,7 @@ CONTENT
            die unless -e "$snap_no_prev/$filename";
 
            $filename_md5_hex = rand() . '.html';  # TODO use no rand() !
+
            my $diff = diff_files("$snap_no_prev/$filename", "$snap_no/$filename");
 
            $filecontent = $diff;
@@ -289,12 +311,15 @@ CONTENT
            $filename_md5_hex = file_md5_hex($filename) . '.html';
 
 
-           if ($filename eq '.git/index') {
-              $filecontent = readpipe('git ls-files --stage');
-           }
-           else {
+#          2017-07-19 No need anymore to specially read .git/index (which is normally a binary file)
+#          because it is stored in the snapshot directories in a readable form.
+#
+#          if ($filename eq '.git/index') {
+#             $filecontent = readpipe('git ls-files --stage');
+#          }
+#          else {
               $filecontent = read_file($filename, binmode => ':utf8');
-           }
+#          }
          }
 
          $filecontent =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
@@ -436,6 +461,8 @@ sub open_html { #_{
 
   my $self = shift;
 
+  $self->cd_top_dir();
+
   unless (-d $self->{name}) {
     mkdir $self->{name} or die;
   }
@@ -443,7 +470,6 @@ sub open_html { #_{
   unlink glob "$self->{name}/*.html";
 
   open ($self->{html_out}, '>:encoding(utf-8)', "$self->{name}/index.html") or die;
-
 
   my $title = "git $self->{name}";
 
@@ -590,5 +616,10 @@ sub write_html_linked_files { #_{
 
 } #_}
 
+sub cd_top_dir { #_{
+  my $self = shift;
+  chdir $self->{top_dir};
+
+} #_}
 
 1;
