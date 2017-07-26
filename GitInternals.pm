@@ -166,7 +166,7 @@ sub print_command { #_{
 
   my $command_html = escape_html($command);
 
-  $command_html =~ s!^git +(\w+)!<a href='http://renenyffenegger.ch/notes/development/version-control-systems/git/commands/$1'>git $1</a>!;
+  $command_html =~ s!^git +([\w-]+)!<a href='http://renenyffenegger.ch/notes/development/version-control-systems/git/commands/$1'>git $1</a>!;
 
   my $cur_dir = $self->{cur_dirs}->[$repo_no];
 
