@@ -554,7 +554,7 @@ td {
 
   print {$self->{html_out}} "</head><body><h1 class='title'>$title</h1>";
 
-  print {$self->{html_out}} "<table border=1>";
+  print {$self->{html_out}} "<table border=0>";
 
   $self->html("<tr><td>Command</td><td>New files</td><td>Changed files</td><td>Deleted files</td></tr>\n");
 } #_}
