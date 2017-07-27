@@ -103,9 +103,7 @@ sub exec { #_{
 
   my $full_path_of_repo = $self->full_path_of_repo($repo_no);
 
-  # TODO: use $self->full_path_of_repo()
-  # chdir $self->{top_dir} . '/repos/' . $self->{cur_dirs}->[$repo_no];
-    chdir $full_path_of_repo;
+  chdir $full_path_of_repo;
 
 # http://renenyffenegger.ch/notes/Linux/shell/commands/faketime
   my $faketime = $self->{t}->strftime('faketime -f "@%Y-%m-%d %H:%M:%S" '); $self->{t} += 60;
@@ -114,6 +112,10 @@ sub exec { #_{
   $self->html (escape_html($command_out));
 
   $self->html("</pre></code>\n");
+
+  if ($options{text_post}) {
+    $self->html("<p class='txt'>" . text2html($options{text_post}) . "</p>\n");
+  }
 
   $self->html("</div>\n");
 
@@ -131,14 +133,9 @@ sub exec { #_{
   else {
     $self->html("<td></td><td></td><td></td>\n");
   }
+
+
   $self->html("</tr>");
-
-
-  if ($options{text_post}) {
-    $self->html("<tr><td colspan='4'>");
-    $self->html("<p class='txt'>" . text2html($options{text_post}) . "</p>\n");
-    $self->html("</td></tr>");
-  }
 
 
 } #_}
@@ -557,7 +554,7 @@ td {
 
   print {$self->{html_out}} "</head><body><h1 class='title'>$title</h1>";
 
-  print {$self->{html_out}} "<table border=0>";
+  print {$self->{html_out}} "<table border=1>";
 
   $self->html("<tr><td>Command</td><td>New files</td><td>Changed files</td><td>Deleted files</td></tr>\n");
 } #_}
