@@ -1,0 +1,3 @@
+
+git cat-file -p master^{tree}
+  The master^{tree} syntax specifies the tree object that is pointed to by the last commit on your master branch. 
