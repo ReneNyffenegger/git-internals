@@ -32,6 +32,7 @@ sub new { #_{
   bless $self, shift;
 
   my $repos_ref = shift;
+  my $opts      = shift;
 
   my @repos = @{$repos_ref};
 #
@@ -45,6 +46,9 @@ sub new { #_{
   $self -> {cur_dirs     } = [ map { "$_/"                   } @repos ];
 
   $self -> {t}             = Time::Piece -> strptime('2016-01-01 00:00:00', '%Y-%m-%d %H:%M:%S');
+
+  $self->{title} = "git $self->{name}" unless $self->{title}=delete $opts->{title};
+# $self -> {title} = $opts->{title} // $self->{name};
 
   my $repo_no = 0;
   for my $repo_name (@repos) {
@@ -481,7 +485,7 @@ sub open_html { #_{
 # open ($self->{html_out}, '>:encoding(utf-8)', "$self->{name}/index.html") or die;
   $self->{html_out} = open_("$self->{name}/index.html");
   
-  my $title = "git $self->{name}";
+  my $title = "$self->{title}";
 
   print {$self->{html_out}} "<!DOCTYPE html>\n";
   print {$self->{html_out}} "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'><title>$title</title></head>\n";
