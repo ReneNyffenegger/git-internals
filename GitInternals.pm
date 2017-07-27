@@ -5,7 +5,7 @@ use strict;
 
 use Cwd;
 use Digest::MD5::File qw(file_md5_hex);
-use File::Path qw(rmtree);
+use File::Path qw(rmtree make_path);
 use File::Basename;
 use File::Copy::Recursive 'dircopy';
 use File::DirCompare;
@@ -34,12 +34,15 @@ sub new { #_{
   my $repos_ref = shift;
 
   my @repos = @{$repos_ref};
-
-  $self -> {working_dirs } = [ map { "repos/$_"} @repos ];
-  $self -> {snapshot_dirs} = [ map { "snaps/$_"} @repos ];
-  $self -> {cur_dirs     } = [ map { "$_/"     } @repos ];
+#
+# Assign script name (without .pl) to self->{name}
+ ($self -> {name         })= fileparse ($0, '.pl');
 
   $self -> {top_dir      } = cwd() . '/';
+
+  $self -> {working_dirs } = [ map { "repos/$self->{name}/$_"} @repos ];
+  $self -> {snapshot_dirs} = [ map { "snaps/$self->{name}/$_"} @repos ];
+  $self -> {cur_dirs     } = [ map { "$_/"                   } @repos ];
 
   $self -> {t}             = Time::Piece -> strptime('2016-01-01 00:00:00', '%Y-%m-%d %H:%M:%S');
 
@@ -50,8 +53,6 @@ sub new { #_{
     $repo_no ++;
   }
 
-# Assign script name (without .pl) to self->{name}
-  ($self -> {name}) = fileparse ($0, '.pl');
 
   $self -> init_directories;
 
@@ -100,8 +101,11 @@ sub exec { #_{
 
   $self -> print_command($repo_no, $command);
 
+  my $full_path_of_repo = $self->full_path_of_repo($repo_no);
+
   # TODO: use $self->full_path_of_repo()
-  chdir $self->{top_dir} . '/repos/' . $self->{cur_dirs}->[$repo_no];
+  # chdir $self->{top_dir} . '/repos/' . $self->{cur_dirs}->[$repo_no];
+    chdir $full_path_of_repo;
 
 # http://renenyffenegger.ch/notes/Linux/shell/commands/faketime
   my $faketime = $self->{t}->strftime('faketime -f "@%Y-%m-%d %H:%M:%S" '); $self->{t} += 60;
@@ -113,8 +117,8 @@ sub exec { #_{
 
   $self->html("</div>\n");
 
-  my $git_repo_diagram = GraphViz::Diagram::GitRepository->new($self->full_path_of_repo($repo_no), "/tmp/$repo_no.$self->{snapshot_no}->[$repo_no].png");
-  $git_repo_diagram->create();
+# my $git_repo_diagram = GraphViz::Diagram::GitRepository->new($self->full_path_of_repo($repo_no), "/tmp/$repo_no.$self->{snapshot_no}->[$repo_no].png");
+# $git_repo_diagram->create();
 
   my $new_snapshot_no = $self -> make_snapshot($repo_no);
   $self -> html("<div class='cur-snap'>snap no: $new_snapshot_no</div>");
@@ -185,13 +189,14 @@ sub init_directories { #_{
 
   my $self = shift;
 
-  for my $dir (@{$self->{working_dirs}}, @{$self->{snapshot_dirs}}) {
+  for my $dir (map {"$self->{top_dir}$_"} ( @{$self->{working_dirs}}, @{$self->{snapshot_dirs}}, "out/$self->{name}")) {
 
       if (-d $dir) {
         rmtree $dir or die "Could not remove $dir";
       }
-      mkdir  $dir or die "Couldn't create $dir in ", cwd();
+      make_path  $dir or die "Couldn't create $dir [$!]";
   }
+# exit;
 } #_}
 
 sub make_snapshot { #_{
@@ -201,11 +206,14 @@ sub make_snapshot { #_{
 
   $self->{snapshot_no}->[$repo_no]++;
 
-  $self->cd_top_dir();
+# $self->cd_top_dir();
 
-  dircopy ("$self->{working_dirs}->[$repo_no]/", "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]");
+  my $dir_from = "$self->{top_dir}$self->{working_dirs}->[$repo_no]/";
+  my $dir_to   = "$self->{top_dir}$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]";
+
+  dircopy ($dir_from, $dir_to);
   
-  chdir $self->{working_dirs}->[$repo_no];
+  chdir "$self->{top_dir}$self->{working_dirs}->[$repo_no]";
 
   if (-e ".git/index") {
 
@@ -356,8 +364,8 @@ CONTENT
   }; #_}
 
   File::DirCompare->compare(
-     "$self->{snapshot_dirs}->[$repo_no]/$prev_snap_no",
-     "$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no",
+     "$self->{top_dir}$self->{snapshot_dirs}->[$repo_no]/$prev_snap_no",
+     "$self->{top_dir}$self->{snapshot_dirs}->[$repo_no]/$curr_snap_no",
   sub { #_{
 
      my ($prev, $new) = @_;
@@ -467,14 +475,15 @@ sub open_html { #_{
 
   $self->cd_top_dir();
 
-  unless (-d $self->{name}) {
-    mkdir $self->{name} or die;
-  }
+# unless (-d $self->{name}) {
+#   mkdir $self->{name} or die;
+# }
 
   unlink glob "$self->{name}/*.html";
 
-  open ($self->{html_out}, '>:encoding(utf-8)', "$self->{name}/index.html") or die;
-
+# open ($self->{html_out}, '>:encoding(utf-8)', "$self->{name}/index.html") or die;
+  $self->{html_out} = open_("$self->{name}/index.html");
+  
   my $title = "git $self->{name}";
 
   print {$self->{html_out}} "<!DOCTYPE html>\n";
@@ -561,7 +570,8 @@ sub write_html_linked_files { #_{
   my $content  = shift;
 
 
-  open (my $f, '>', $self->{name} . "/$filename") or die "$!\n" . cwd() . "\n$filename";
+# open (my $f, '>', $self->{name} . "/$filename") or die "$!\n" . cwd() . "\n$filename";
+  my $f = open_($self->{name} . "/$filename");
 
   print $f "<!DOCTYPE html>\n";
   print $f "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'><title>$title</title>\n";
@@ -630,7 +640,16 @@ sub full_path_of_repo { #_{
   my $self    = shift;
   my $repo_no = shift;
 
-  return $self->{top_dir} . '/repos/' . $self->{cur_dirs}->[$repo_no];
+  return $self->{top_dir} . $self->{working_dirs}->[$repo_no];
 } #_}
 
+sub open_ {
+
+  my $filename = shift;
+
+  open my $fh, '>:encoding(utf-8)', "out/$filename" or die "Could not open out/$filename [$!]";
+
+  return $fh;
+
+}
 1;
