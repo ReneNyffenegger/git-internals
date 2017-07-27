@@ -490,6 +490,7 @@ sub open_html { #_{
   print {$self->{html_out}} q{<style type="text/css">
 * { font-family: Liberation Sans ; }
 
+    code {font-family: Courier New, monospace;}
      body {margin: 0}
 
 div.out0, div.out1, div.out2, div.outNeutral {padding-left: 20px}
