@@ -1,3 +1,4 @@
+https://github.com/git-tips/tips
 
 git cat-file -p master^{tree}
   The master^{tree} syntax specifies the tree object that is pointed to by the last commit on your master branch. 
@@ -11,6 +12,9 @@ https://stackoverflow.com/a/17603805/180275
    Neat. I didn't know git checkout could take a tree id instead of a commit-ish. Having a play with this 
 
 git log --graph --oneline --decorate
+
+https://matthew-brett.github.io/curious-git/curious_git.html
+https://matthew-brett.github.io/curious-git/git_object_types.html
 
 am
 annotate
