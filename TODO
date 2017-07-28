@@ -3,6 +3,10 @@ https://github.com/git-tips/tips
 git cat-file -p master^{tree}
   The master^{tree} syntax specifies the tree object that is pointed to by the last commit on your master branch. 
 
+ »Values of reference«:
+    HEAD@{10}
+    master@{one.week.ago}
+
 Commit object with multiple ancestors
   https://git-scm.com/docs/git-commit-tree 
     -p … -p … -p …
