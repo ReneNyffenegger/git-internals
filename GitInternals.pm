@@ -394,8 +394,19 @@ CONTENT
          # A file was deleted. Add it to the list of deleted files
            &$add_file(\@deleted_files, $prev, $prev_snap_no);
          }
+         elsif (-d $prev) { #_{ A directory was deleted: add each file of the deleted directory:
+           find( {no_chdir => 1, wanted => sub {
+
+                 my $file = $_;
+                 return if -d $file;
+                 &$add_file(\@deleted_files, $file, $prev_snap_no);
+
+               }
+            }, $prev);
+
+         } #_}
          else {
-           die;
+           die "Dir comparison: previous file $prev not found.";
          }
 
      #_}
