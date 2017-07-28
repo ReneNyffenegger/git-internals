@@ -23,7 +23,8 @@ $gi -> exec('Alice', 'echo ONE >> one.txt');
 $gi -> exec('Alice', 'git update-index one.txt');
 $gi -> exec('Alice', 'git write-tree');
 
-$gi -> exec('Alice', 'git commit-tree da93050 -m "Second commit" -p 68e902c');
+$gi -> exec('Alice', 'git commit-tree da93050 -m "Second commit" -p 68e902c',
+            text_pre => 'Create another commit object, reference the first commit object as parent (<code>-p</code>)');
 
 $gi -> exec('Alice', 'git log a06ce91');
 
