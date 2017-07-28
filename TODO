@@ -84,7 +84,6 @@ prune
 prune-packed
 pull
 push
-read-tree
 rebase
 reflog
 relink
@@ -119,6 +118,13 @@ verify-pack
 verify-tag
 whatchanged
 worktree
-write-tree 
 
 https://stackoverflow.com/questions/1838873/visualizing-branch-topology-in-git/34467298#34467298
+
+Normally a commit would identify a new "HEAD" state, and while Git doesn’t care
+  where you save the note about that state, in practice we tend to just write the
+  result to the file that is pointed at by .git/HEAD, so that we can always see
+  what the last committed state was.
+
+While a tree represents a particular directory state of a working directory, a
+  commit represents that state in "time", and explains how to get there.
