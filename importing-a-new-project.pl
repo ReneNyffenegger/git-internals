@@ -24,3 +24,5 @@ $gi -> exec('Alice', 'git add .',
 $gi -> exec('Alice', 'git commit -m "First version"',
      text_pre => 'Permanently store the »first version« of the project in Git:'
   );
+
+$gi -> end;
