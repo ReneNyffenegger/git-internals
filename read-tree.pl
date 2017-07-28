@@ -23,6 +23,9 @@ $gi -> exec('Alice', 'git commit . -m "deleted a few files"');
 
 $gi -> exec('Alice', 'git status');
 
-$gi -> exec('Alice', 'git read-tree b475e40');
+$gi -> exec('Alice', 'git read-tree b475e40',
+       text_pre => 'git read-tree changes the index/stating area (it adds <code>dir/two.txt</code> and <code>dir/subdir/three.txt</code> again) but does not add this files to the working directory');
 
 $gi -> exec('Alice', 'git status');
+
+$gi -> end;
