@@ -17,6 +17,14 @@ $gi -> exec('Alice', 'git update-index --add one.txt dir/two.txt dir/subdir/thre
 
 $gi -> exec('Alice', 'git write-tree');
 
-$gi -> exec('Alice', 'git commit-tree f572124');
+$gi -> exec('Alice', 'git commit-tree f572124 -m "First commit"');
+
+$gi -> exec('Alice', 'echo ONE >> one.txt');
+$gi -> exec('Alice', 'git update-index one.txt');
+$gi -> exec('Alice', 'git write-tree');
+
+$gi -> exec('Alice', 'git commit-tree da93050 -m "Second commit" -p 68e902c');
+
+$gi -> exec('Alice', 'git log a06ce91');
 
 $gi -> end;
