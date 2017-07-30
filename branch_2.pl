@@ -53,25 +53,47 @@ $gi -> exec('Bob'  , 'cat numbers.txt',
        text_pre=>'Examine the content of numbers.txt',
        text_post=>'Bob sees the commited fix (two instead of tow) of Alice at the time of his cloning the repository');
 
-# $gi -> exec('Bob'  , 'git branch master origin/master');
-$gi -> exec('Bob'  , 'git checkout origin/master');
-$gi -> exec('Bob'  , 'cat numbers.txt');
+$gi -> exec('Bob'  , 'git branch master origin/master',
+       text_pre=>'Bob wants to work on the master branch. Therefore, he creates it like so …');
+
+$gi -> exec('Bob'  , 'git checkout master',
+       text_pre=>'… and switches to it:',
+       text_post=>'Note: Bob could have done the creation and switch to the new branch in one step: <code>git checkout -b master origin/master</code>.');
+        
+
+# $gi -> exec('Bob'  , 'git checkout -b master origin/master');
+
+$gi -> exec('Bob'  , 'cat numbers.txt',
+       text_pre=>'The content of numbers.txt now has all three typos:');
+
+$gi -> exec('Alice', 'git commit numbers.txt -m "Fix typo fife->five"',
+       text_pre=>'In the mean time, Alice commits here second typo');
  
-# $gi -> exec('Bob'  , "sed -i '/three/aTQ84-inserted-line' numbers.txt");
-# 
-# $gi -> exec('Bob'  , 'git commit . -m "Added TQ84 line"');
-# # $gi -> exec('Bob'  , 'git push ' . $gi->repo_dir_full_path('Alice'));
-# $gi -> exec('Bob'  , 'git push origin');
-# 
-# $gi -> exec('Alice', 'git branch');
-# 
+$gi -> exec('Bob'  , 'printf "eleven\ntwelve\n" >> numbers.txt',
+       text_pre=>'Bob adds 11 and 12 to numbers.txt:');
+
+$gi -> exec('Bob'  , 'git commit numbers.txt -m "add 11 and 12"',
+       text_pre=>'Commit the changes:');
+
+# $gi -> exec('Bob'  , 'git push --dry-run ' . $gi->repo_dir_full_path('Alice'));
+$gi -> exec('Bob'  , 'git push origin master');
+# $gi -> exec('Bob'  , 'git pull');
+# $gi -> exec('Bob'  , 'git push');
+
+$gi -> exec('Alice', 'git branch');
+
+$gi -> exec('Bob'  , 'git checkout fixTypo');
+$gi -> exec('Bob'  , 'cat numbers.txt');
+
+$gi -> exec('Alice', 'git checkout master');
+$gi -> exec('Alice', 'cat numbers.txt');
+ 
 # $gi -> exec('Bob'  , 'git push -u origin tq84');
 # $gi -> exec('Alice', 'git branch');
 # 
 # $gi -> exec('Alice', 'git checkout tq84');
 # $gi -> exec('Alice', 'cat numbers.txt');
 # 
-# $gi -> exec('Alice', 'git checkout master');
 # 
 # $gi -> exec('Alice', 'printf "seven\n" >> numbers.txt');
 # $gi -> exec('Alice', 'cat numbers.txt');
