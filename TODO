@@ -144,3 +144,37 @@ While a tree represents a particular directory state of a working directory, a
   [format]
     pretty = format:%h %Cblue%ad%Creset %ae %Cgreen%s%Creset
     pretty = format:%C(yellow)%h %Cblue%>(12)%ad %Cgreen%<(7)%aN%Cred%d %Creset%s
+
+https://stackoverflow.com/questions/16408300/what-are-the-differences-between-local-branch-local-tracking-branch-remote-bra
+
+Detached head
+
+  You can think of it as an anonymous branch
+
+  ***
+
+
+  Any checkout of a commit that is not the name of one of your branches will
+  get you a detached HEAD.
+  For example, if you checkout a "remote branch" without tracking it first, you
+  can end up with a detached HEAD.
+
+  ***
+
+  In fact, you will get a detached HEAD whenever you checkout any commit by its
+  SHA1, whether or not it's at the tip of a branch; the only kind of thing you
+  can checkout without getting a detached HEAD is a branch name. 
+
+  ***
+
+  Another way you can enter detached head state is if you're in the middle of
+  an interactive rebase, and you want to edit one of the commits. When Git
+  drops you at the commit to edit, you'll be in a detached head state until you
+  finish the rebase
+
+
+New local branches
+  A new local branch must be pushed explicitly:
+
+  git push origin your-new-branch-name
+
