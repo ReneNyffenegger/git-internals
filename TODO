@@ -96,6 +96,10 @@ push
   remote branches to push them to? It only pushes local branches which have
   been configured to push to a particular remote branch.
 
+  git push --all origin
+    this pushes the commits to separate branches on the repo, not from one
+    branch into master.
+
 rebase
 reflog
 relink
