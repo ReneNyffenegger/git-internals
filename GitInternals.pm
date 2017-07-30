@@ -448,7 +448,7 @@ sub print_file_list { #_{
          $object_type = " <span class='obj-type'>[$object->{type}]</span>";
        }
 
-       $self->html("<code class='filename'>$file_name</code>$object_type");
+       $self->html("<span style='white-space:nowrap'><code class='filename'>$file_name</code>$object_type</span>");
 
        $self->html("<br>") if (++$counter < @$files_ref);
     }
