@@ -92,6 +92,10 @@ prune
 prune-packed
 pull
 push
+  git push doesn't push all of your local branches: how would it know which
+  remote branches to push them to? It only pushes local branches which have
+  been configured to push to a particular remote branch.
+
 rebase
 reflog
 relink
