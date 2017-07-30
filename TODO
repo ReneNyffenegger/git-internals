@@ -67,6 +67,10 @@ index-pack
 init
 instaweb
 log
+  git log --stat --summary
+  git log --pretty=format:"%h%x09%an%x09%ad%x09%s"
+  --date=short
+  https://git-scm.com/docs/pretty-formats
 ls-files
 ls-remote
 ls-tree
@@ -132,3 +136,11 @@ Normally a commit would identify a new "HEAD" state, and while Git doesn’t car
 
 While a tree represents a particular directory state of a working directory, a
   commit represents that state in "time", and explains how to get there.
+
+
+.gitconfig
+  [log]
+    date = relative
+  [format]
+    pretty = format:%h %Cblue%ad%Creset %ae %Cgreen%s%Creset
+    pretty = format:%C(yellow)%h %Cblue%>(12)%ad %Cgreen%<(7)%aN%Cred%d %Creset%s
