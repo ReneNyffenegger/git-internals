@@ -47,7 +47,7 @@ $gi -> exec('Bob'  , 'git branch -r',
        text_pre=>'So, in order to see the remote tracking branches, he uses the<code>-r</code> option:');
 
 $gi -> exec('Bob'  , 'git branch -a',
-       text_pre=>'With the <code>-a</code> option, he sees <i>all</i> branches, remote tracking and local ones:');
+       text_pre=>'With the <code>-a</code> option, he sees <i>all</i> branches: remote tracking and local ones:');
 
 $gi -> exec('Bob'  , 'cat numbers.txt',
        text_pre=>'Examine the content of numbers.txt',
@@ -76,7 +76,7 @@ $gi -> exec('Bob'  , 'git commit numbers.txt -m "add 11 and 12"',
        text_pre=>'Commit the changes:');
 
 # $gi -> exec('Bob'  , 'git push --dry-run ' . $gi->repo_dir_full_path('Alice'));
-$gi -> exec('Bob'  , 'git push origin master');
+$gi -> exec('Bob'  , 'git push origin master', compare_also=>'Alice');
 # $gi -> exec('Bob'  , 'git pull');
 # $gi -> exec('Bob'  , 'git push');
 

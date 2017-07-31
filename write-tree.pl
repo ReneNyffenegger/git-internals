@@ -14,7 +14,9 @@ $gi -> exec('Alice', 'printf "foo\nbar\nbaz\n"   > foo-bar-baz.txt'  ,
        text_pre=>'First, Alice creates two files: foo-bar-baz.txt and …');
 
 $gi -> exec('Alice', 'printf "one\ntwo\nthree\n" > one-two-three.txt',
-       text_pre=>'… one-two-three.txt.');
+       text_pre=>'… one-two-three.txt.',
+#      no_separate_command=>1
+     );
 
 $gi -> exec('Alice', 'git update-index --add *.txt'      ,
        text_pre =>'She adds both files to the index:');

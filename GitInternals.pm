@@ -82,18 +82,29 @@ sub end { #_{
 } #_}
 
 sub exec { #_{
-  my $self = shift;
-
+  my $self      = shift;
   my $repo_name = shift;
 
   my $repo_no = $self->repo_no($repo_name);
   die "Unknown repo with name $repo_name" unless defined $repo_no;
 
-  my $command   = shift;
+  my $command          = shift;
 
-  my %options   = @_;
+  my %options          = @_;
 
-  $self->html("<tr><td>");
+  my $compare_also = delete $options{compare_also} // '';
+
+  my $separate_command = 1;
+  if (delete $options{no_separate_command}) {
+    $separate_command=0;
+  }
+  my $td_css='';
+  if ($separate_command) {
+    $td_css = ' class="separate-command"';
+  }
+
+
+  $self->html("<tr><td$td_css>");
 
   $self->html("<div class='out$repo_no'>");
 
@@ -132,15 +143,20 @@ sub exec { #_{
   $self->html("</td>");
 
   if (not $options{no_cmp}) {
-    $self -> compare_snapshots($repo_no);
+    $self -> compare_snapshots($repo_no, $td_css);
   }
   else {
-    $self->html("<td></td><td></td><td></td>\n");
+    $self->html("<td$td_css></td><td$td_css></td><td$td_css></td>\n");
   }
 
 
   $self->html("</tr>");
 
+  if ($compare_also) {
+
+    $self->exec($compare_also, "echo compare also $compare_also", no_separate_command=>1);
+
+  }
 
 } #_}
 
@@ -246,8 +262,9 @@ sub repo_dir_full_path { #_{
 
 sub compare_snapshots { #_{
 
-  my $self = shift;
+  my $self    = shift;
   my $repo_no = shift;
+  my $td_css  = shift;
 
   my @new_files;
   my @deleted_files;
@@ -417,11 +434,11 @@ CONTENT
      } #_}
    }); #_}
 
-  $self->html("<td>");
+ $self->html("<td$td_css>");
   $self -> print_file_list('New files'    , 'new-files'    , $repo_no, $curr_snap_no  , \@new_files    );
-  $self->html("</td><td>");
+  $self->html("</td><td$td_css>");
   $self -> print_file_list('Changed files', 'changed-files', $repo_no, $curr_snap_no  , \@changed_files);
-  $self->html("</td><td>");
+  $self->html("</td><td$td_css>");
   $self -> print_file_list('Deleted files', 'deleted-files', $repo_no, $curr_snap_no-1, \@deleted_files);
   $self->html("</td>");
 
@@ -550,8 +567,11 @@ table {
 td {
   vertical-align: top;
   border-right: 1px solid #f93;
-  border-top:   1px solid #f93;
+//border-top:   1px solid #f93;
   padding: 10px;
+}
+td.separate-command {
+  border-top:   1px solid #f93;
 }
 
 #repolink {
