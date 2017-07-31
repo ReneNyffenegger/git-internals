@@ -7,7 +7,7 @@ use GitInternals;
 
 my $gi = new GitInternals ( ['Alice', 'Bob' ]);
 
-$gi -> exec('Alice', 'git init', no_cmp => 1);
+$gi -> exec('Alice', 'git init --template=""');
 
 $gi -> exec('Alice', 'printf "noe\ntwo\nthree\n" > numbers.txt',
    text_pre => 'Alice adds a file. Note the typo (noe instead of one).',

@@ -6,7 +6,7 @@ use GitInternals;
 
 my $gi = GitInternals -> new(['Alice']);
 
-$gi -> exec('Alice', 'git init', no_cmp => 1);
+$gi -> exec('Alice', 'git init --template=""');
 
 $gi -> exec('Alice', "printf 'one foo\ntwo bar\n' > some-blob");
 

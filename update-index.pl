@@ -8,7 +8,7 @@ use GitInternals;
 
 my $gi = GitInternals -> new(['Alice']);
 
-$gi -> exec('Alice', 'git init', no_cmp => 1);
+$gi -> exec('Alice', 'git init --template=""');
 
 $gi -> exec('Alice', 'printf "foo\nbar\nbaz\n"   > foo-bar-baz.txt'  ,
        text_pre=>'First, Alice creates two files: foo-bar-baz.txt and …');

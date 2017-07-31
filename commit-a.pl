@@ -6,7 +6,7 @@ use GitInternals;
 
 my $gi = new GitInternals ( [ 'Alice']);
 
-$gi -> exec('Alice', 'git init'                                    , no_cmp => 1);
+$gi -> exec('Alice', 'git init --template=""');
 
 $gi -> exec('Alice', 'echo foo > foo.txt'                          , no_cmp => 1);
 $gi -> exec('Alice', 'git add .'                                   , no_cmp => 1);

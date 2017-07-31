@@ -6,7 +6,7 @@ use GitInternals;
 
 my $gi = new GitInternals ( [ 'Alice']);
 
-$gi -> exec('Alice', 'git init'                                    , no_cmp => 1);
+$gi -> exec('Alice', 'git init --template=""');
 
 $gi -> exec('Alice', 'printf "foo\nabr\nbaz\n" > foo.txt'          , no_cmp => 1);
 $gi -> exec('Alice', 'printf "one\ntwo\nthree\n" > 123.txt'        , no_cmp => 1);

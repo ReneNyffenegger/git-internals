@@ -8,7 +8,7 @@ use GitInternals;
 
 my $gi = new GitInternals ( [ 'Alice']);
 
-$gi -> exec('Alice', 'git init', no_cmp=>1);
+$gi -> exec('Alice', 'git init --template=""');
 
 $gi -> exec('Alice', 'touch numbers.txt',
        text_pre => 'Alice creates the (empty) file numbers.txt');

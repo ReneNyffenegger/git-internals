@@ -13,7 +13,7 @@ $gi -> exec('Alice', 'echo two > foo/two.txt');
 $gi -> exec('Alice', 'echo three > bar/three.txt');
 $gi -> exec('Alice', 'echo four > baz/four.txt');
 
-$gi -> exec('Alice', 'git init');
+$gi -> exec('Alice', 'git init --template=""');
 
 
 $gi -> exec('Alice', 'git add .',

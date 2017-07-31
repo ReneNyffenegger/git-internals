@@ -7,7 +7,7 @@ use GitInternals;
 
 my $gi = GitInternals -> new(['Alice']);
 
-$gi -> exec('Alice', 'git init', no_cmp => 1);
+$gi -> exec('Alice', 'git init --template=""');
 
 $gi -> exec('Alice', 'echo one > one.txt');
 $gi -> exec('Alice', 'mkdir dir; echo two > dir/two.txt');
