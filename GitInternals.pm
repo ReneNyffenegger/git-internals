@@ -656,7 +656,7 @@ sub full_path_of_repo { #_{
   return $self->{top_dir} . $self->{working_dirs}->[$repo_no];
 } #_}
 
-sub open_ {
+sub open_ { #_{
 
   my $filename = shift;
 
@@ -664,5 +664,6 @@ sub open_ {
 
   return $fh;
 
-}
+} #_}
+
 1;
