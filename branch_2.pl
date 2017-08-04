@@ -41,7 +41,7 @@ $gi -> exec('Bob'  , 'git clone --template="" ' . $gi->repo_dir_full_path('Alice
 
 $gi -> exec('Bob'  , 'git branch',
        text_pre=>'Bob wants to inquire about available branches:',
-       text_post=>'A little surprising, there is only the fixTypo branch and no master branch. This is because he cloned from Alice\'s repository when it was in the fixTypo branch.');
+       text_post=>'A little surprising, there is only the fixTypo branch and no master branch. This is (probably?) because he cloned from Alice\'s repository when it was in the fixTypo branch.');
 
 $gi -> exec('Bob'  , 'git branch -r',
        text_pre=>'So, in order to see the remote tracking branches, he uses the<code>-r</code> option:');
@@ -51,7 +51,7 @@ $gi -> exec('Bob'  , 'git branch -a',
 
 $gi -> exec('Bob'  , 'cat numbers.txt',
        text_pre=>'Examine the content of numbers.txt',
-       text_post=>'Bob sees the commited fix (two instead of tow) of Alice at the time of his cloning the repository');
+       text_post=>'Bob sees the commited fix (two instead of tow) of Alice at the time of his cloning the repository.');
 
 $gi -> exec('Bob'  , 'git branch master origin/master',
        text_pre=>'Bob wants to work on the master branch. Therefore, he creates it like so …');
@@ -67,41 +67,43 @@ $gi -> exec('Bob'  , 'cat numbers.txt',
        text_pre=>'The content of numbers.txt now has all three typos:');
 
 $gi -> exec('Alice', 'git commit numbers.txt -m "Fix typo fife->five"',
-       text_pre=>'In the mean time, Alice commits here second typo');
+       text_pre=>'In the mean time, Alice commits her second typo fix.');
  
 $gi -> exec('Bob'  , 'printf "eleven\ntwelve\n" >> numbers.txt',
-       text_pre=>'Bob adds 11 and 12 to numbers.txt:');
+       text_pre=>'Bob, being on the master branch, adds 11 and 12 to numbers.txt:');
 
 $gi -> exec('Bob'  , 'git commit numbers.txt -m "add 11 and 12"',
        text_pre=>'Commit the changes:');
 
-# $gi -> exec('Bob'  , 'git push --dry-run ' . $gi->repo_dir_full_path('Alice'));
-$gi -> exec('Bob'  , 'git push origin master', compare_also=>'Alice');
-# $gi -> exec('Bob'  , 'git pull');
-# $gi -> exec('Bob'  , 'git push');
+$gi -> exec('Bob'  , 'git push origin master');
 
-$gi -> exec('Alice', 'git branch');
+# TODO: This is certainly possible more elegantly...
+$gi -> exec('Alice', '', no_separate_command=>1, another_diff=>1, text_pre=>"Bob's push also changes Alice's repository");
 
-$gi -> exec('Bob'  , 'git checkout fixTypo');
-$gi -> exec('Bob'  , 'cat numbers.txt');
+$gi -> exec('Bob'  , 'git pull',
+       text_pre=>"He now pulls from Alice's repository:",
+       text_post=>"Note: it pulls the commit object of Alice's latest typo fix, but it <i>does not</i> update <code>.git/refs/heads/fixTypo</code>!" );
 
-$gi -> exec('Alice', 'git checkout master');
-$gi -> exec('Alice', 'cat numbers.txt');
- 
-# $gi -> exec('Bob'  , 'git push -u origin tq84');
-# $gi -> exec('Alice', 'git branch');
-# 
-# $gi -> exec('Alice', 'git checkout tq84');
-# $gi -> exec('Alice', 'cat numbers.txt');
-# 
-# 
-# $gi -> exec('Alice', 'printf "seven\n" >> numbers.txt');
-# $gi -> exec('Alice', 'cat numbers.txt');
-# $gi -> exec('Alice', 'git commit . -m "+ seven"');
-# 
-# $gi -> exec('Bob'  , 'git branch');
-# $gi -> exec('Bob'  , 'git pull origin master');
-# $gi -> exec('Bob'  , 'git merge master');
-# $gi -> exec('Bob'  , 'cat numbers.txt');
+  $gi -> exec('Bob'  , 'git checkout fixTypo',
+       text_pre=>'Bob checks out the fixTypo branch.',
+       text_post=>"He would be mistaken if he believed that he now has Alice's latest fix. Note git's warning <i>Your branch is behind 'origin/fixTypo' by 1 commit…</i>");
+
+$gi -> exec('Bob'  , 'cat numbers.txt',
+       text_pre=>"Bob does not according to git's recommendation to execute <code>git pull</code> again…",
+       text_post=>"… so he still sees <i>fife</i> instead of the corrected <i>five</i>.");
+
+$gi -> exec('Bob'  , 'git pull',
+       text_pre=>"He now <i>does</i> execute <code>git pull</code> …",
+       text_post=>"… which updates <code>.git/refs/heads/fixTypo</code>. Note, that the command does not pull new objects into Bob's repository.");
+
+$gi -> exec('Bob'  , 'cat numbers.txt',
+       text_pre=>"Showing the content of the file:",
+       text_post=>"This time, the file does contain Alice's correction.");
+
+$gi -> exec('Alice', 'git checkout master',
+       text_pre=>"In the mean time, Alice checks out the master branch.",
+       text_post=>"Note, git does not say anything about the branch being behind.");
+$gi -> exec('Alice', 'cat numbers.txt',
+       text_pre=>"So, she sees Bob's addition of eleven and twelve.");
 
 $gi -> end();

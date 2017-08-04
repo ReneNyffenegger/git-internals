@@ -92,7 +92,8 @@ sub exec { #_{
 
   my %options          = @_;
 
-  my $compare_also = delete $options{compare_also} // '';
+# my $compare_also  = delete $options{compare_also } //  '';
+  my $another_diff  = delete $options{another_diff } //  0;
 
   my $separate_command = 1;
   if (delete $options{no_separate_command}) {
@@ -106,33 +107,33 @@ sub exec { #_{
 
   $self->html("<tr><td$td_css>");
 
-  $self->html("<div class='out$repo_no'>");
+  my $class_div;
+  if ($another_diff) {
+#   $class_div = " class='outNeutral'";
+    $class_div = " class='out$repo_no'";
+  }
+  else {
+    $class_div = " class='out$repo_no'";
+  }
+
+  $self->html("<div$class_div>"); #_{ <div>
 
   if ($options{text_pre}) {
     $self->html("<p class='txt'>" . text2html($options{text_pre}) . "</p>\n");
   }
 
-  $self->html("<code class='shell'><pre>");
+  if ($another_diff) {
+  }
+  else {
+    $self->print_command_code($repo_no, $command);
+  }
 
-  $self -> print_command($repo_no, $command);
-
-  my $full_path_of_repo = $self->full_path_of_repo($repo_no);
-
-  chdir $full_path_of_repo;
-
-# http://renenyffenegger.ch/notes/Linux/shell/commands/faketime
-  my $faketime = $self->{t}->strftime('faketime -f "@%Y-%m-%d %H:%M:%S" '); $self->{t} += 60;
-  my $command_out = readpipe ("$faketime $command 2>&1");
-
-  $self->html (escape_html($command_out));
-
-  $self->html("</pre></code>\n");
 
   if ($options{text_post}) {
     $self->html("<p class='txt'>" . text2html($options{text_post}) . "</p>\n");
   }
 
-  $self->html("</div>\n");
+  $self->html("</div>\n"); #_}
 
 # my $git_repo_diagram = GraphViz::Diagram::GitRepository->new($self->full_path_of_repo($repo_no), "/tmp/$repo_no.$self->{snapshot_no}->[$repo_no].png");
 # $git_repo_diagram->create();
@@ -152,11 +153,32 @@ sub exec { #_{
 
   $self->html("</tr>");
 
-  if ($compare_also) {
+# if ($compare_also) {
+#   $self->exec($compare_also, "echo compare also $compare_also", no_separate_command=>1, another_diff=>1);
+# }
 
-    $self->exec($compare_also, "echo compare also $compare_also", no_separate_command=>1);
+} #_}
 
-  }
+sub print_command_code { #_{
+  my $self    = shift;
+  my $repo_no = shift;
+  my $command = shift;
+
+  $self->html("<code class='shell'><pre>");
+
+  $self -> print_command($repo_no, $command);
+
+  my $full_path_of_repo = $self->full_path_of_repo($repo_no);
+
+  chdir $full_path_of_repo;
+
+# http://renenyffenegger.ch/notes/Linux/shell/commands/faketime
+  my $faketime = $self->{t}->strftime('faketime -f "@%Y-%m-%d %H:%M:%S" '); $self->{t} += 60;
+  my $command_out = readpipe ("$faketime $command 2>&1");
+
+  $self->html (escape_html($command_out));
+
+  $self->html("</pre></code>\n");
 
 } #_}
 
