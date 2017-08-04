@@ -19,7 +19,7 @@ $gi -> exec('Alice', 'git add numbers.txt',
 $gi -> exec('Alice', 'git commit numbers.txt -m "add numbers.txt"',
    no_cmp => 1);
 
-$gi -> exec('Bob', 'git clone ' . $gi->repo_dir_full_path('Alice') .  ' .',
+$gi -> exec('Bob', 'git clone --template="" ' . $gi->repo_dir_full_path('Alice') .  ' .',
    text_pre  => 'Bob clones Alice\'s repository',
    no_cmp => 0);
 
