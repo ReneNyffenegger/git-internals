@@ -245,7 +245,6 @@ sub make_snapshot { #_{
 
   $self->{snapshot_no}->[$repo_no]++;
 
-# $self->cd_top_dir();
 
   my $dir_from = "$self->{top_dir}$self->{working_dirs}->[$repo_no]/";
   my $dir_to   = "$self->{top_dir}$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]";
@@ -253,34 +252,22 @@ sub make_snapshot { #_{
   dircopy ($dir_from, $dir_to);
   
   chdir "$self->{top_dir}$self->{working_dirs}->[$repo_no]";
-  print "MAKE_SNAPSHOT: ", cwd(), "\n";
 
   my $cd_safe = cwd();
 
-# if (-e ".git/index")
   for my $index_file (grep {-e} glob '.git/index .git/modules/*/index') {
 
 
-#   print "index_file = $index_file, (" . cwd() . ")\n";
-#   next unless -e $index_file; # The glob operator returns .git/index, wheather it exists or not
-#   print "index_file (again) = $index_file\n";
-
     my $chdir_index_dir = $index_file;
     $chdir_index_dir =~ s/\/index$//;
-    print cwd(), " chdir to $chdir_index_dir\n";
     chdir $chdir_index_dir or die "Could not chadir into $chdir_index_dir";
 
     my $git_index_readable = readpipe("git ls-files --stage");
-#   print "\n$git_index_readable\n";
 
     $self->cd_top_dir();
     chdir "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]" or die;
 
-
-    print cwd(), " index_file = $index_file\n";
-#   write_file(".git/index", $git_index_readable);
     write_file($index_file, $git_index_readable);
-#   write_file('index', $git_index_readable);
 
     chdir $cd_safe;
   }
@@ -396,7 +383,7 @@ CONTENT
 #          }
          }
 
-         print "filename = $filename (" . cwd() . ")\n";
+#        print "filename = $filename (" . cwd() . ")\n";
          $filecontent =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
 #        }
 #        else {
