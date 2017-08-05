@@ -314,7 +314,7 @@ sub compare_snapshots { #_{
 
 
     if ($filename =~               m!^(.git/)?objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$! or #_{ A git object (blob, tree, commit, tag)
-        $filename =~ m!^(.git/modules/[^/]+)/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) {
+        $filename =~ m!^(.git/modules/[^/]+/)objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) {
 
        my $modules_dir = $1;
        my $object_id = "$2$3";
