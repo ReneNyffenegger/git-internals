@@ -253,19 +253,36 @@ sub make_snapshot { #_{
   dircopy ($dir_from, $dir_to);
   
   chdir "$self->{top_dir}$self->{working_dirs}->[$repo_no]";
+  print "MAKE_SNAPSHOT: ", cwd(), "\n";
 
-  if (-e ".git/index") {
+  my $cd_safe = cwd();
+
+# if (-e ".git/index")
+  for my $index_file (grep {-e} glob '.git/index .git/modules/*/index') {
+
+
+#   print "index_file = $index_file, (" . cwd() . ")\n";
+#   next unless -e $index_file; # The glob operator returns .git/index, wheather it exists or not
+#   print "index_file (again) = $index_file\n";
+
+    my $chdir_index_dir = $index_file;
+    $chdir_index_dir =~ s/\/index$//;
+    print cwd(), " chdir to $chdir_index_dir\n";
+    chdir $chdir_index_dir or die "Could not chadir into $chdir_index_dir";
 
     my $git_index_readable = readpipe("git ls-files --stage");
+#   print "\n$git_index_readable\n";
 
     $self->cd_top_dir();
+    chdir "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]" or die;
 
-    chdir "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]";
 
-    write_file(".git/index", $git_index_readable);
-  }
-  else {
-#   print ".git/index doesn't exists\n";
+    print cwd(), " index_file = $index_file\n";
+#   write_file(".git/index", $git_index_readable);
+    write_file($index_file, $git_index_readable);
+#   write_file('index', $git_index_readable);
+
+    chdir $cd_safe;
   }
 
   return $self->{snapshot_no}->[$repo_no];
@@ -309,8 +326,10 @@ sub compare_snapshots { #_{
     $filename = File::Spec -> abs2rel($filename, "$self->{snapshot_dirs}->[$repo_no]/$snap_no");
 
 
-    if ($filename =~ m!^(.git/)?objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) { #_{ A git object (blob, tree, commit, tag)
+    if ($filename =~               m!^(.git/)?objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$! or #_{ A git object (blob, tree, commit, tag)
+        $filename =~ m!^(.git/modules/[^/]+)/objects/([[:xdigit:]]{2})/([[:xdigit:]]+)$!) {
 
+       my $modules_dir = $1;
        my $object_id = "$2$3";
 
        my $filename_obj = "obj_$object_id.html";
@@ -320,11 +339,14 @@ sub compare_snapshots { #_{
 
        my $cwd_safe = cwd(); #_{
           chdir ($self->{working_dirs}->[$repo_no]);
+          if ($modules_dir =~ m!^.git/modules/! ) {
+             chdir $modules_dir;
+          }
 
-          my $object_type = readpipe("git cat-file -t $object_id");
+          my $object_type = readpipe("git cat-file -t $object_id") or die "Could not cat-file -t $object_id (" . cwd() . ")";
           chomp $object_type;
 
-          my $object_content = readpipe("git cat-file -p $object_id");;
+          my $object_content = readpipe("git cat-file -p $object_id") or die;
           $object_content =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
 
        chdir $cwd_safe; #_}
@@ -374,6 +396,7 @@ CONTENT
 #          }
          }
 
+         print "filename = $filename (" . cwd() . ")\n";
          $filecontent =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
 #        }
 #        else {
@@ -687,8 +710,7 @@ sub write_html_linked_files { #_{
 
 sub cd_top_dir { #_{
   my $self = shift;
-  chdir $self->{top_dir};
-
+  chdir $self->{top_dir} or die;
 } #_}
 
 sub full_path_of_repo { #_{
