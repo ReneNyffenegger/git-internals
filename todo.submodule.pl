@@ -8,11 +8,8 @@ use GitInternals;
 my $gi = GitInternals -> new(['Alice', 'Bob']);
 
 $gi->exec('Bob', 'git init --template=""');
-
 $gi->exec('Bob', 'printf "Bob\'s Library\nVersion 1\n" > README');
-
 $gi->exec('Bob', 'git add README');
-
 $gi->exec('Bob', 'git commit README -m "add README"');
 
 
@@ -24,5 +21,16 @@ $gi->exec('Alice', 'git add README');
 $gi->exec('Alice', 'git commit README -m "Add README"');
 
 $gi->exec('Alice', 'git submodule add ' . $gi->repo_dir_full_path('Bob'));
+
+# ----
+
+$gi->exec('Bob', 'sed -i s/1/1.1/ README');
+$gi->exec('Bob', 'git commit . -m "Version 1.1"');
+
+# ----
+
+$gi->exec('Alice', 'git submodule update --remote # --merge ?');
+
+$gi->exec('Alice', 'cat Bob/README');
 
 $gi->end();
