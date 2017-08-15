@@ -1,3 +1,5 @@
+Stashing
+
 https://github.com/git-tips/tips
 
 git cat-file -p master^{tree}
