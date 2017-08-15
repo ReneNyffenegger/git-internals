@@ -1,5 +1,3 @@
-Stashing
-
 git checkout -b B bla
   fatal: 'bla' is not a commit and a branch 'B' cannot be created from it
 
