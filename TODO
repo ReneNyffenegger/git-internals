@@ -3,6 +3,9 @@ Stashing
 git checkout -b B bla
   fatal: 'bla' is not a commit and a branch 'B' cannot be created from it
 
+git merge branch_A branch_B
+  -> Merge made by the octopus strategy
+
 https://github.com/git-tips/tips
 
 git cat-file -p master^{tree}
