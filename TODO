@@ -1,3 +1,30 @@
+refspec
+  git push --help:
+    The format of a <refspec> parameter is
+      an optional plus +, followed by the
+      source object <src>, followed by
+      a colon :, followed by
+      the destination ref <dst>.
+
+    <src>: is often the name of the branch you would want to push, but it can
+          be any arbitrary "SHA-1 expression", such as master~4 or HEAD (see
+          gitrevisions(7)).
+
+    <dst>: tells which ref on the remote side is updated with this push.
+
+    <tag> means the same as refs/tags/<tag>
+
+     The special refspec
+       : (or +: to allow non-fast-forward updates)
+     directs Git to push "matching" branches:
+       for every branch that exists on the local side, the remote side is
+       updated if a branch of the same name already exists on the remote side.
+
+  ----------------------
+    <rev> typically, but not necessarily, names a commit object.
+
+
+
 git checkout -b B bla
   fatal: 'bla' is not a commit and a branch 'B' cannot be created from it
 
@@ -201,3 +228,4 @@ Upstream branches
       git push --set-upstream origin fixUsage
    
 
+man 7 gitrevisions
