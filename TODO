@@ -23,7 +23,58 @@ refspec
   ----------------------
     <rev> typically, but not necessarily, names a commit object.
 
+git pull origin foo
+  Merges into the current branch the remote branch foo 
 
+git reset:
+  If a pull resulted in conflicts, git reset can be used to start over.
+
+  Undo merge or pull:
+    git pull
+    # CONFLICT!!!
+    git reset --hard
+    git pull . topic/branch
+    git reset --hard ORIG_HEAD
+
+get reset --soft HEAD^
+  Something that was just commited is incomplete, or commit message was mispelled. Leaves working tree as it was.
+
+
+Interrupted workflow
+       Suppose you are interrupted by an urgent fix request while you are in the middle of a large change. The files in your working tree are not in any shape to be committed yet, but you need to get to the other branch for a quick bugfix.
+
+           $ git checkout feature ;# you were working in "feature" branch and
+           $ work work work       ;# got interrupted
+           $ git commit -a -m "snapshot WIP"                 (1)
+           $ git checkout master
+           $ fix fix fix
+           $ git commit ;# commit with real log
+           $ git checkout feature
+           $ git reset --soft HEAD^ ;# go back to WIP state  (2)
+           $ git reset                                       (3)
+
+       1. This commit will get blown away so a throw-away log message is OK.
+       2. This removes the WIP commit from the commit history, and sets your working tree to the state just before you made that snapshot.
+       3. At this point the index file still has all the WIP changes you committed as snapshot WIP. This updates the index to show your WIP files as uncommitted.
+
+Deciding to start a topic branch after three commits
+  git commit
+  git commit
+  git commit
+  # Realization that commits where premature, starting to create a topic branch
+  git branch   topic/wip
+  git reset --hard HEAD^3
+  git checkout topic/wip
+
+Remove n commits completely:
+  git commit
+  git commit
+  git commit
+  git reset --hard HEAD^3
+  # Don't do this if changes were already pulled or pushed (See RECOVERING FROM UPSTREAM REBASE in git rebase --help)
+
+
+  
 
 git checkout -b B bla
   fatal: 'bla' is not a commit and a branch 'B' cannot be created from it
