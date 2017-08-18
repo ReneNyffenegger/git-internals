@@ -39,6 +39,9 @@ git reset:
 get reset --soft HEAD^
   Something that was just commited is incomplete, or commit message was mispelled. Leaves working tree as it was.
 
+git log --graph --oneline --decorate
+    In a not-master branch, how can I make it show all branches etc.
+   (See TODO_LOG_GRAPH in todo.fetch.pl)
 
 Interrupted workflow
        Suppose you are interrupted by an urgent fix request while you are in the middle of a large change. The files in your working tree are not in any shape to be committed yet, but you need to get to the other branch for a quick bugfix.
@@ -264,6 +267,20 @@ Detached head
   drops you at the commit to edit, you'll be in a detached head state until you
   finish the rebase
 
+
+git branch -a vs git branch -r
+
+    Why is the output of 
+        git branch -a
+            * master
+              remote/origin/B1
+              remote/origin/B2
+     and of
+        git branch -r
+              origin/B1
+              origin/B2
+          (that is: without remote?)
+     See TODO_BRANCH_A_R in todo.fetch.pl
 
 New local branches
   A new local branch must be pushed explicitly:
