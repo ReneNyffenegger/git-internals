@@ -10,7 +10,8 @@ use File::Basename;
 use File::Copy::Recursive 'dircopy';
 use File::DirCompare;
 use File::Find;
-use File::Slurp;
+# 2018-11-15 use File::Slurp;
+use File::Slurper;
 use File::Which;
 use HTML::Escape;
 use Text::Diff::FormattedHTML;
@@ -267,7 +268,9 @@ sub make_snapshot { #_{
     $self->cd_top_dir();
     chdir "$self->{snapshot_dirs}->[$repo_no]/$self->{snapshot_no}->[$repo_no]" or die;
 
-    write_file($index_file, $git_index_readable);
+  # 2018-11-15: use File::Slurper rather than File::Slurp
+  # write_file($index_file, $git_index_readable);
+    File::Slurper::write_text($index_file, $git_index_readable);
 
     chdir $cd_safe;
   }
@@ -333,7 +336,7 @@ sub compare_snapshots { #_{
           my $object_type = readpipe("git cat-file -t $object_id") or die "Could not cat-file -t $object_id (" . cwd() . ")";
           chomp $object_type;
 
-          my $object_content = readpipe("git cat-file -p $object_id") or die;
+          my $object_content = readpipe("git cat-file -p $object_id") or die "could not >git cat-file -p $object_id<";
           $object_content =~ s!([[:xdigit:]]{40})!<a href='obj_$1.html'>$1</a>!mg;
 
        chdir $cwd_safe; #_}
@@ -379,7 +382,9 @@ CONTENT
 #             $filecontent = readpipe('git ls-files --stage');
 #          }
 #          else {
-              $filecontent = read_file($filename, binmode => ':utf8');
+            # 2018-11-15: use File::Slurper rather than File::Slurp
+            # $filecontent = read_file($filename, binmode => ':utf8');
+              $filecontent = File::Slurper::read_text($filename);
 #          }
          }
 
